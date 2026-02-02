@@ -55,7 +55,7 @@ trait Options
         $model = new $modelName();
 
         if (!$this->hasModelAttribute($model, $label)) {
-            return $this->answerColumnNotFound('label');
+            return $this->answerColumnNotFound($label);
         }
 
         $query = $model->newQuery()
