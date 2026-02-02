@@ -47,6 +47,15 @@ return [
     'delete' => [
     ],
 
+    'soft_delete' => [
+        'deleted_at_field' => 'deleted_at',
+        'deleted_by_field' => 'deleted_by',
+    ],
+
+    'restore' => [
+        'method' => 'toArray',
+    ],
+
     'search' => [
         'method' => 'toArray',
         'per_page' => 40,

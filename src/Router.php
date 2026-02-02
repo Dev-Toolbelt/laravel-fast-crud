@@ -41,6 +41,9 @@ final class Router extends Route
         ['verb' => 'patch', 'path' => '/{id:uuid}', 'method' => 'update', 'permission' => 'update'],
         ['verb' => 'post', 'path' => '/{id:uuid}', 'method' => 'update', 'permission' => 'update'],
         ['verb' => 'delete', 'path' => '/{id:uuid}', 'method' => 'delete', 'permission' => 'delete'],
+        ['verb' => 'delete', 'path' => '/{id:uuid}/soft', 'method' => 'softDelete', 'permission' => 'delete'],
+        ['verb' => 'patch', 'path' => '/{id:uuid}/restore', 'method' => 'restore', 'permission' => 'restore'],
+        ['verb' => 'put', 'path' => '/{id:uuid}/restore', 'method' => 'restore', 'permission' => 'restore'],
     ];
 
     /**
@@ -54,6 +57,8 @@ final class Router extends Route
      * - GET /{uri}/{id:uuid} -> read() with {module}.access.view permission
      * - PUT|PATCH|POST /{uri}/{id:uuid} -> update() with {module}.access.update permission
      * - DELETE /{uri}/{id:uuid} -> delete() with {module}.access.delete permission
+     * - DELETE /{uri}/{id:uuid}/soft -> softDelete() with {module}.access.delete permission
+     * - PUT|PATCH /{uri}/{id:uuid}/restore -> restore() with {module}.access.restore permission
      *
      * @param string $uri Base URI for the resource (e.g., 'products', 'api/v1/users')
      * @param class-string $controllerName Fully qualified controller class name
@@ -72,7 +77,7 @@ final class Router extends Route
             $verb = $action['verb'];
             $path = $uri . $action['path'];
             $method = $action['method'];
-            $permission = $action['permission'];
+            $permission = $action['permission'] ?? null;
 
             if (!method_exists($controllerName, $method)) {
                 continue;
@@ -83,6 +88,11 @@ final class Router extends Route
             }
 
             $route = static::$verb($path, "{$controllerName}@{$method}");
+
+            if (!$permission) {
+                continue;
+            }
+
             $route->middleware("can:{$moduleName}.access.{$permission}");
         }
     }

@@ -10,7 +10,9 @@ use DevToolbelt\LaravelFastCrud\Actions\Delete;
 use DevToolbelt\LaravelFastCrud\Actions\ExportCsv;
 use DevToolbelt\LaravelFastCrud\Actions\Options;
 use DevToolbelt\LaravelFastCrud\Actions\Read;
+use DevToolbelt\LaravelFastCrud\Actions\Restore;
 use DevToolbelt\LaravelFastCrud\Actions\Search;
+use DevToolbelt\LaravelFastCrud\Actions\SoftDelete;
 use DevToolbelt\LaravelFastCrud\Actions\Update;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -46,6 +48,8 @@ abstract class CrudController
     use Read;
     use Update;
     use Delete;
+    use SoftDelete;
+    use Restore;
     use Search;
     use Options;
     use ExportCsv;
