@@ -31,13 +31,18 @@ composer phpstan           # Run static analysis (level 6)
 ### Actions (src/Actions/)
 
 Traits implementing CRUD operations:
-- **Create** - POST create, calls `beforeFill()` → `fill()` → `beforeSave()` → `save()` → `afterSave()`
-- **Read** - GET by `external_id` (UUID), hook: `modifyReadQuery()`
-- **Update** - PUT/PATCH/POST update by `external_id`
-- **Delete** - DELETE by `external_id`, hook: `modifyDeleteQuery()`
-- **Search** - GET list with filtering/sorting/pagination, hook: `modifySearchQuery()`
-- **Options** - GET `/options` for select dropdowns, hook: `modifyOptionsQuery()`
-- **ExportCsv** - GET `/export-csv`, hook: `modifyExportCsvQuery()`
+
+| Action | Method | Route | Hooks |
+|--------|--------|-------|-------|
+| **Create** | `create()` | `POST /` | `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
+| **Read** | `read()` | `GET /{id}` | `modifyReadQuery()`, `afterRead()` |
+| **Update** | `update()` | `PUT/PATCH/POST /{id}` | `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
+| **Delete** | `delete()` | `DELETE /{id}` | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
+| **SoftDelete** | `softDelete()` | `DELETE /{id}/soft` | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
+| **Restore** | `restore()` | `PATCH/PUT /{id}/restore` | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
+| **Search** | `search()` | `GET /` | `modifySearchQuery()`, `afterSearch()` |
+| **Options** | `options()` | `GET /options` | `modifyOptionsQuery()`, `afterOptions()` |
+| **ExportCsv** | `exportCsv()` | `GET /export-csv` | `modifyExportCsvQuery()` |
 
 ### Query Traits (src/Traits/)
 
@@ -63,14 +68,22 @@ Global settings apply to all actions, but can be overridden per action:
 'read' => ['method' => 'toArray'],
 'update' => ['method' => 'toArray'],
 'delete' => [],
+'soft_delete' => [
+    'deleted_at_field' => 'deleted_at',
+    'deleted_by_field' => 'deleted_by',
+],
+'restore' => ['method' => 'toArray'],
 'search' => ['method' => 'toArray', 'per_page' => 40],
 'export_csv' => ['method' => 'toArray'],
 ```
 
+**Configuration options:**
 - `find_field`: Database column for finding records (global or per action)
 - `find_field_is_uuid`: Validate identifier as UUID before querying (global or per action)
 - `method`: Model serialization method (`toArray`, `toSoftArray`, or custom)
 - `per_page`: Default pagination size (search only)
+- `deleted_at_field`: Column for soft delete timestamp (soft_delete only)
+- `deleted_by_field`: Column for soft delete user ID (soft_delete only)
 
 Action-specific settings override global. Publish with:
 ```bash
@@ -80,10 +93,11 @@ php artisan vendor:publish --tag=fast-crud-config
 ## Key Patterns
 
 1. **Configurable Find Field** - API uses `id` by default, configurable via `find_field` option
-2. **Hook Methods** - Override `beforeFill()`, `beforeSave()`, `afterSave()`, `modifyXxxQuery()` for customization
+2. **Hook Methods** - Override hooks for customization without overriding entire actions
 3. **Trait Composition** - Actions are traits; include only what you need
 4. **JSend Responses** - Uses `AnswerTrait` from `dev-toolbelt/jsend-payload` for response formatting
 5. **Auto-Discovery** - ServiceProvider registered automatically via Laravel package discovery
+6. **Custom Soft Delete** - Independent soft delete system with audit fields (deleted_at, deleted_by)
 
 ## Model Requirements
 
@@ -91,6 +105,7 @@ Models must have:
 - A unique identifier field (configured via `find_field`, default: `id`)
 - Standard Eloquent `fillable` property
 - `toArray()` method (or custom method configured via `method` option)
+- For soft delete: `deleted_at` and `deleted_by` columns (configurable)
 
 ## Code Standards
 

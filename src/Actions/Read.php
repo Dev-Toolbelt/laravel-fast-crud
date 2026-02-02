@@ -53,7 +53,7 @@ trait Read
             return $this->answerRecordNotFound();
         }
 
-        $response = $this->answerSuccess($record->{$method});
+        $response = $this->answerSuccess($record->{$method}());
         $this->afterRead($record);
 
         return $response;

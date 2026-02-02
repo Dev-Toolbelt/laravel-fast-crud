@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DevToolbelt\Enums\Tests;
+namespace DevToolbelt\LaravelFastCrud\Tests;
 
 use Mockery;
 use PHPUnit\Framework\TestCase as BaseTestCase;
