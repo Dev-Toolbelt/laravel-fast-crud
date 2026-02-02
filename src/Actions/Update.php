@@ -33,10 +33,13 @@ trait Update
      *
      * @param Request $request The HTTP request containing the updated data
      * @param string $id The external_id (UUID) of the record to update
+     * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with the updated record or error response
      */
-    public function update(Request $request, string $id, string $method = 'toArray'): JsonResponse|ResponseInterface
+    public function update(Request $request, string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
+        $method = $method ?? config('devToolbelt.fast_crud.update.method', 'toArray');
+
         if (!Str::isUuid($id)) {
             return $this->answerInvalidUuid();
         }

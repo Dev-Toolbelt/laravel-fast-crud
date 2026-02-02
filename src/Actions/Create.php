@@ -29,10 +29,12 @@ trait Create
      * Creates a new record from the request data.
      *
      * @param Request $request The HTTP request containing the model data
+     * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with 201 Created on success, or error response
      */
-    public function create(Request $request, string $method = 'toArray'): JsonResponse|ResponseInterface
+    public function create(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
+        $method = $method ?? config('devToolbelt.fast_crud.create.method', 'toArray');
         $data = $request->post();
 
         if (empty($data)) {

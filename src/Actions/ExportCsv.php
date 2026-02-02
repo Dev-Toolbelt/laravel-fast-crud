@@ -73,13 +73,14 @@ trait ExportCsv
      * Exports records to a CSV file download.
      *
      * @param Request $request The HTTP request with optional filter and sort parameters
-     * @param string $method The model method to call for serialization (default: 'toArray')
+     * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return StreamedResponse Streamed CSV file download response
      *
      * @throws Exception When an invalid search operator is provided
      */
-    public function exportCsv(Request $request, string $method = 'toArray'): StreamedResponse
+    public function exportCsv(Request $request, ?string $method = null): StreamedResponse
     {
+        $method = $method ?? config('devToolbelt.fast_crud.export_csv.method', 'toArray');
         $modelName = $this->modelClassName();
         $query = $modelName::query();
         $isAssociative = array_keys($this->csvColumns) !== range(0, count($this->csvColumns) - 1);

@@ -41,7 +41,7 @@ trait Search
      * Searches and returns a paginated list of records.
      *
      * @param Request $request The HTTP request with filter, sort, and pagination parameters
-     * @param string $method The model method to call for serialization (default: 'toSoftArray')
+     * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with records and pagination metadata
      *
      * @throws Exception When an invalid search operator is provided
@@ -51,8 +51,9 @@ trait Search
      * GET /products?filter[name][like]=Samsung&filter[price][gte]=100&sort=-created_at&perPage=20
      * ```
      */
-    public function search(Request $request, string $method = 'toArray'): JsonResponse|ResponseInterface
+    public function search(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
+        $method = $method ?? config('devToolbelt.fast_crud.search.method', 'toArray');
         $modelName = $this->modelClassName();
         $query = $modelName::query();
 

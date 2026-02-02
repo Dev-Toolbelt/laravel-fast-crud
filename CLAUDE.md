@@ -50,12 +50,30 @@ Traits implementing CRUD operations:
 
 Defines operators: `eq`, `neq`, `in`, `nin`, `like`, `lt`, `gt`, `lte`, `gte`, `gtn`, `ltn`, `btw`, `json`, `nn`
 
+### Configuration (config/fast-crud.php)
+
+Configures the default model serialization method for each action:
+
+```php
+'create' => ['method' => 'toArray'],
+'read' => ['method' => 'toArray'],
+'update' => ['method' => 'toArray'],
+'search' => ['method' => 'toArray'],
+'export_csv' => ['method' => 'toArray'],
+```
+
+Access via `config('devToolbelt.fast_crud.{action}.method')`. Publish with:
+```bash
+php artisan vendor:publish --tag=fast-crud-config
+```
+
 ## Key Patterns
 
 1. **External ID** - API uses `external_id` (UUID) field, not internal `id`
 2. **Hook Methods** - Override `beforeFill()`, `beforeSave()`, `afterSave()`, `modifyXxxQuery()` for customization
 3. **Trait Composition** - Actions are traits; include only what you need
 4. **JSend Responses** - Uses `AnswerTrait` from `dev-toolbelt/jsend-payload` for response formatting
+5. **Auto-Discovery** - ServiceProvider registered automatically via Laravel package discovery
 
 ## Model Requirements
 

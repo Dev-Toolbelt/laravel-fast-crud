@@ -26,10 +26,13 @@ trait Read
      * Retrieves a single record by its external_id.
      *
      * @param string $id The external_id (UUID) of the record
+     * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with the record data or error response
      */
-    public function read(string $id, string $method = 'toArray'): JsonResponse|ResponseInterface
+    public function read(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
+        $method = $method ?? config('devToolbelt.fast_crud.read.method', 'toArray');
+
         if (!Str::isUuid($id)) {
             return $this->answerInvalidUuid();
         }
