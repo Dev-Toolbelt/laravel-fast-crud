@@ -62,7 +62,9 @@ trait Search
         $this->modifySearchQuery($query);
         $this->processSearch($query, $request->get('filter', []));
         $this->processSort($query, $request->input('sort', ''));
+
         $this->buildPagination($query, $perPage, $method);
+        $this->afterSearch($this->data);
 
         return $this->answerSuccess($this->data, meta: [
             'pagination' => $this->paginationData
@@ -87,6 +89,18 @@ trait Search
      * ```
      */
     protected function modifySearchQuery(Builder $query): void
+    {
+    }
+
+    /**
+     * Hook called after the search results have been fetched.
+     *
+     * Override this method to perform post-search actions,
+     * such as caching, analytics, or result transformation.
+     *
+     * @param array<int, array<string, mixed>> $data The search results array
+     */
+    protected function afterSearch(array $data): void
     {
     }
 }

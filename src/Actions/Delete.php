@@ -52,7 +52,9 @@ trait Delete
             return $this->answerRecordNotFound();
         }
 
+        $this->beforeDelete($record);
         $record->delete();
+        $this->afterDelete($record);
 
         return $this->answerNoContent();
     }
@@ -74,6 +76,30 @@ trait Delete
      * ```
      */
     protected function modifyDeleteQuery(Builder $query): void
+    {
+    }
+
+    /**
+     * Hook called before the record is deleted.
+     *
+     * Override this method to perform actions before deletion,
+     * such as logging, validation, or cleanup of related data.
+     *
+     * @param Model $record The model instance about to be deleted
+     */
+    protected function beforeDelete(Model $record): void
+    {
+    }
+
+    /**
+     * Hook called after the record has been deleted.
+     *
+     * Override this method to perform post-deletion actions,
+     * such as clearing cache, dispatching events, or audit logging.
+     *
+     * @param Model $record The deleted model instance
+     */
+    protected function afterDelete(Model $record): void
     {
     }
 }

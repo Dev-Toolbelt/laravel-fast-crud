@@ -15,12 +15,9 @@ use Psr\Http\Message\ResponseInterface;
  * Provides the update (PUT/PATCH/POST by ID) action for CRUD controllers.
  *
  * Updates an existing model instance with the request data.
- * Executes the following lifecycle: beforeFill() -> fill() -> beforeSave() -> save() -> afterSave()
+ * Executes the lifecycle: beforeUpdateFill() -> beforeUpdate() -> update() -> afterUpdate()
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method void beforeFill(array &$data) Hook called before filling the model
- * @method void beforeSave(Model $record) Hook called before saving
- * @method void afterSave(Model $record) Hook called after saving
  * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
@@ -66,11 +63,10 @@ trait Update
             return $this->answerRecordNotFound();
         }
 
-        $this->beforeFill($data);
-        $record->fill($data);
-        $this->beforeSave($record);
-        $record->save();
-        $this->afterSave($record);
+        $this->beforeUpdateFill($data);
+        $this->beforeUpdate($record, $data);
+        $record->update($data);
+        $this->afterUpdate($record);
 
         return $this->answerSuccess($record->{$method}());
     }
@@ -92,6 +88,43 @@ trait Update
      * ```
      */
     protected function modifyUpdateQuery(Builder $query): void
+    {
+    }
+
+    /**
+     * Hook called before filling the model with request data during update.
+     *
+     * Override this method to transform, validate, or add additional data
+     * before the model is filled.
+     *
+     * @param array<string, mixed> $data Request data to be filled into the model (passed by reference)
+     */
+    protected function beforeUpdateFill(array &$data): void
+    {
+    }
+
+    /**
+     * Hook called before the model is updated.
+     *
+     * Override this method for additional validations, setting computed fields,
+     * or any logic that needs access to the record and data before persistence.
+     *
+     * @param Model $record The model instance about to be updated
+     * @param array<string, mixed> $data The data to be used for update (passed by reference)
+     */
+    protected function beforeUpdate(Model $record, array &$data): void
+    {
+    }
+
+    /**
+     * Hook called after the model has been successfully updated.
+     *
+     * Override this method for post-update operations like dispatching events,
+     * updating related models, or logging.
+     *
+     * @param Model $record The updated model instance
+     */
+    protected function afterUpdate(Model $record): void
     {
     }
 }

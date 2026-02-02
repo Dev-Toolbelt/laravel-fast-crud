@@ -53,7 +53,7 @@ trait Options
         /** @var Model $model */
         $model = new $modelName();
 
-        if (!$model->hasModelAttribute($label)) {
+        if (!$this->hasModelAttribute($model, $label)) {
             return $this->answerColumnNotFound('label');
         }
 
@@ -69,6 +69,8 @@ trait Options
             'label' => $record['label'],
             'value' => $record['value'],
         ], $records);
+
+        $this->afterOptions($rows);
 
         return $this->answerSuccess($rows);
     }
@@ -90,6 +92,18 @@ trait Options
      * ```
      */
     protected function modifyOptionsQuery(Builder $query): void
+    {
+    }
+
+    /**
+     * Hook called after the options have been fetched and formatted.
+     *
+     * Override this method to perform post-fetch actions,
+     * such as caching or modifying the results.
+     *
+     * @param array<int, array{label: mixed, value: mixed}> $rows The formatted options array
+     */
+    protected function afterOptions(array $rows): void
     {
     }
 }

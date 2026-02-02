@@ -31,7 +31,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
  *         return Product::class;
  *     }
  *
- *     protected function beforeSave(Model $record): void
+ *     protected function beforeCreateSave(Model $record): void
  *     {
  *         $record->slug = Str::slug($record->name);
  *     }
@@ -58,38 +58,25 @@ abstract class CrudController
     abstract protected function modelClassName(): string;
 
     /**
-     * Hook called before filling the model with request data.
+     * Checks if a model has a given attribute.
      *
-     * Use this to transform, validate, or add additional data before
-     * the model is filled. The data array is passed by reference.
+     * Combines fillable, guarded, original, casts, and appends properties
+     * to determine if the attribute exists on the model.
      *
-     * @param array<string, mixed> $data Request data to be filled into the model
+     * @param Model $model The model instance to check
+     * @param string $attributeName The attribute name to look for
+     * @return bool True if the attribute exists, false otherwise
      */
-    protected function beforeFill(array &$data): void
+    protected function hasModelAttribute(Model $model, string $attributeName): bool
     {
-    }
+        $attributes = array_unique([
+            ...$model->getFillable(),
+            ...$model->getGuarded(),
+            ...array_keys($model->getOriginal()),
+            ...array_keys($model->getCasts()),
+            ...$model->getAppends(),
+        ]);
 
-    /**
-     * Hook called after filling the model but before saving to database.
-     *
-     * Use this for additional validations, setting computed fields,
-     * or any logic that needs the filled model before persistence.
-     *
-     * @param Model $record The model instance about to be saved
-     */
-    protected function beforeSave(Model $record): void
-    {
-    }
-
-    /**
-     * Hook called after the model has been successfully saved to database.
-     *
-     * Use this for post-save operations like dispatching events,
-     * updating related models, or logging.
-     *
-     * @param Model $record The saved model instance
-     */
-    protected function afterSave(Model $record): void
-    {
+        return in_array($attributeName, $attributes, true);
     }
 }

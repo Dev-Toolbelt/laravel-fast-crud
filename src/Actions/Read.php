@@ -53,7 +53,10 @@ trait Read
             return $this->answerRecordNotFound();
         }
 
-        return $this->answerSuccess($record->{$method});
+        $response = $this->answerSuccess($record->{$method});
+        $this->afterRead($record);
+
+        return $response;
     }
 
     /**
@@ -73,6 +76,18 @@ trait Read
      * ```
      */
     protected function modifyReadQuery(Builder $query): void
+    {
+    }
+
+    /**
+     * Hook called after the record has been read and response prepared.
+     *
+     * Override this method to perform post-read actions,
+     * such as logging, analytics, or cache warming.
+     *
+     * @param Model $record The model instance that was read
+     */
+    protected function afterRead(Model $record): void
     {
     }
 }
