@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     bootstrap="bootstrap.php"
+     backupGlobals="false"
+     backupStaticProperties="false"
+     colors="true"
+     stopOnFailure="false"
+     testdox="true"
+     beStrictAboutOutputDuringTests="false"
+     failOnRisky="false"
+     failOnWarning="false"
+     executionOrder="defects"
+     cacheResult="true"
+     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+     cacheDirectory=".phpunit.cache"
+>
+    <coverage>
+        <report>
+            <html outputDirectory="coverage"/>
+        </report>
+    </coverage>
+
+    <testsuites>
+        <testsuite name="unit">
+            <directory>Unit</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory suffix=".php">../src</directory>
+        </include>
+    </source>
+</phpunit>

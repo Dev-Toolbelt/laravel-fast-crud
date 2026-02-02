@@ -1,0 +1,48 @@
+{
+    "name": "dev-toolbelt/laravel-fast-crud",
+    "description": "",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [],
+    "authors": [
+        {
+            "name": "Kilderson Sena",
+            "email": "dersonsena@gmail.com"
+        }
+    ],
+    "scripts": {
+        "test": "phpunit --configuration tests/phpunit.xml",
+        "test:coverage": "phpunit --configuration tests/phpunit.xml --coverage-html tests/coverage",
+        "phpcs": "phpcs --standard=phpcs.xml",
+        "phpcs:fix": "php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes",
+        "phpstan": "phpstan analyse --configuration=phpstan.neon"
+    },
+    "require": {
+        "php": "^8.1",
+        "dev-toolbelt/jsend-payload": "^1.0",
+        "dev-toolbelt/enums": "^1.0",
+        "laravel/framework": "^11.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "mockery/mockery": "^1.6",
+        "phpstan/phpstan": "^1.0",
+        "phpunit/phpunit": "^10.0",
+        "squizlabs/php_codesniffer": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "DevToolbelt\\LaravelFastCrud\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DevToolbelt\\LaravelFastCrud\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
