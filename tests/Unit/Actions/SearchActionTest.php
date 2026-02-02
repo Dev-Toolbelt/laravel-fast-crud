@@ -194,8 +194,8 @@ final class SearchActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.search.method' => 'toArray',
-            'devToolbelt.fast_crud.search.per_page' => 40,
+            'devToolbelt.fast-crud.search.method' => 'toArray',
+            'devToolbelt.fast-crud.search.per_page' => 40,
         ];
 
         $config = array_merge($defaults, $overrides);

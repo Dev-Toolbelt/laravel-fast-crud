@@ -447,7 +447,7 @@ final class CreateActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.create.method' => 'toArray',
+            'devToolbelt.fast-crud.create.method' => 'toArray',
         ];
 
         $config = array_merge($defaults, $overrides);

@@ -80,11 +80,11 @@ final class ReadActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $this->mockConfig([
-            'devToolbelt.fast_crud.read.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.read.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
-            'devToolbelt.fast_crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
         ]);
 
         $this->controller->read('999');
@@ -95,11 +95,11 @@ final class ReadActionTest extends TestCase
     public function testReadReturnsInvalidUuidWhenUuidValidationFails(): void
     {
         $this->mockConfig([
-            'devToolbelt.fast_crud.read.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.read.find_field_is_uuid' => true,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => true,
-            'devToolbelt.fast_crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
         ]);
 
         $this->controller->read('not-a-uuid');
@@ -120,11 +120,11 @@ final class ReadActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $this->mockConfig([
-            'devToolbelt.fast_crud.read.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.read.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
-            'devToolbelt.fast_crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
         ]);
 
         $this->controller->read('1');
@@ -145,11 +145,11 @@ final class ReadActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $this->mockConfig([
-            'devToolbelt.fast_crud.read.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.read.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
-            'devToolbelt.fast_crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
         ]);
 
         $this->controller->read('1');
@@ -170,11 +170,11 @@ final class ReadActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $this->mockConfig([
-            'devToolbelt.fast_crud.read.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.read.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
-            'devToolbelt.fast_crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
         ]);
 
         $response = $this->controller->read('1');

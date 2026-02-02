@@ -306,7 +306,7 @@ final class OptionsActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.options.default_value' => 'id',
+            'devToolbelt.fast-crud.options.default_value' => 'id',
         ];
 
         $config = array_merge($defaults, $overrides);

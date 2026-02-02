@@ -203,7 +203,7 @@ final class ExportCsvActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.export_csv.method' => 'toArray',
+            'devToolbelt.fast-crud.export_csv.method' => 'toArray',
         ];
 
         $config = array_merge($defaults, $overrides);

@@ -218,7 +218,7 @@ final class UpdateActionTest extends TestCase
 
     public function testUpdateReturnsInvalidUuidWhenUuidValidationFails(): void
     {
-        $this->mockConfig(['devToolbelt.fast_crud.update.find_field_is_uuid' => true]);
+        $this->mockConfig(['devToolbelt.fast-crud.update.find_field_is_uuid' => true]);
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('post')->andReturn(['name' => 'Test']);
@@ -605,11 +605,11 @@ final class UpdateActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.update.method' => 'toArray',
-            'devToolbelt.fast_crud.update.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.update.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.update.method' => 'toArray',
+            'devToolbelt.fast-crud.update.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.update.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
         ];
 
         $config = array_merge($defaults, $overrides);

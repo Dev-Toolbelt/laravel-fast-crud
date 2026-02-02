@@ -170,7 +170,8 @@ trait ExportCsv
     /**
      * Writes a CSV line with proper escaping for special characters.
      *
-     * Handles commas, newlines, and double quotes according to RFC 4180.
+     * Handles commas and newlines by wrapping in quotes.
+     * Double quotes are replaced with single quotes for cleaner output.
      *
      * @param resource $handle The file handle to write to
      * @param array<int, mixed> $fields The fields to write
@@ -182,8 +183,10 @@ trait ExportCsv
         foreach ($fields as $field) {
             $field = (string) $field;
 
-            if (str_contains($field, ',') || str_contains($field, "\n") || str_contains($field, '"')) {
-                $field = str_replace('"', '""', $field);
+            // Replace double quotes with single quotes for cleaner output
+            $field = str_replace('"', "'", $field);
+
+            if (str_contains($field, ',') || str_contains($field, "\n")) {
                 $line[] = '"' . $field . '"';
                 continue;
             }

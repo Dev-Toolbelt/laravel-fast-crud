@@ -78,7 +78,7 @@ final class DeleteActionTest extends TestCase
 
     public function testDeleteReturnsInvalidUuidWhenUuidValidationFails(): void
     {
-        $this->mockConfig(['devToolbelt.fast_crud.delete.find_field_is_uuid' => true]);
+        $this->mockConfig(['devToolbelt.fast-crud.delete.find_field_is_uuid' => true]);
 
         $this->controller->delete('not-a-uuid');
 
@@ -223,10 +223,10 @@ final class DeleteActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.delete.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.delete.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.delete.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.delete.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
         ];
 
         $config = array_merge($defaults, $overrides);

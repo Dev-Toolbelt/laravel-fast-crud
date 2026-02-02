@@ -98,7 +98,7 @@ final class SoftDeleteActionTest extends TestCase
 
     public function testSoftDeleteReturnsInvalidUuidWhenUuidValidationFails(): void
     {
-        $this->mockConfig(['devToolbelt.fast_crud.soft_delete.find_field_is_uuid' => true]);
+        $this->mockConfig(['devToolbelt.fast-crud.soft_delete.find_field_is_uuid' => true]);
 
         $this->controller->softDelete('not-a-uuid');
 
@@ -301,12 +301,12 @@ final class SoftDeleteActionTest extends TestCase
     private function mockConfig(array $overrides = []): void
     {
         $defaults = [
-            'devToolbelt.fast_crud.soft_delete.find_field' => null,
-            'devToolbelt.fast_crud.global.find_field' => 'id',
-            'devToolbelt.fast_crud.soft_delete.find_field_is_uuid' => null,
-            'devToolbelt.fast_crud.global.find_field_is_uuid' => false,
-            'devToolbelt.fast_crud.soft_delete.deleted_at_field' => 'deleted_at',
-            'devToolbelt.fast_crud.soft_delete.deleted_by_field' => 'deleted_by',
+            'devToolbelt.fast-crud.soft_delete.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.soft_delete.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.soft_delete.deleted_at_field' => 'deleted_at',
+            'devToolbelt.fast-crud.soft_delete.deleted_by_field' => 'deleted_by',
         ];
 
         $config = array_merge($defaults, $overrides);
