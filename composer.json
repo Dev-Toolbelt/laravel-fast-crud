@@ -1,15 +1,34 @@
 {
     "name": "dev-toolbelt/laravel-fast-crud",
-    "description": "",
+    "description": "Laravel package for rapid CRUD API scaffolding with filtering, sorting, pagination and CSV export",
     "type": "library",
     "license": "MIT",
-    "keywords": [],
+    "keywords": [
+        "laravel",
+        "crud",
+        "api",
+        "rest",
+        "restful",
+        "scaffold",
+        "eloquent",
+        "controller",
+        "filtering",
+        "sorting",
+        "pagination"
+    ],
+    "homepage": "https://github.com/dev-toolbelt/laravel-fast-crud",
     "authors": [
         {
             "name": "Kilderson Sena",
-            "email": "dersonsena@gmail.com"
+            "email": "dersonsena@gmail.com",
+            "homepage": "https://github.com/dersonsena",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/dev-toolbelt/laravel-fast-crud/issues",
+        "source": "https://github.com/dev-toolbelt/laravel-fast-crud"
+    },
     "scripts": {
         "test": "phpunit --configuration tests/phpunit.xml",
         "test:coverage": "phpunit --configuration tests/phpunit.xml --coverage-html tests/coverage",
