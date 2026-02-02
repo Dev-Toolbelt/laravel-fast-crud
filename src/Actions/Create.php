@@ -14,11 +14,18 @@ use Psr\Http\Message\ResponseInterface;
  * Provides the creation (POST) action for CRUD controllers.
  *
  * Creates a new model instance from the request data and persists it to the database.
- * Executes the lifecycle: beforeCreateFill() -> beforeCreate() -> create() -> afterCreate()
+ *
+ * Lifecycle:
+ * 1. beforeCreateFill() - Transform or add data before validation
+ * 2. createValidateRules() - Validate data using Laravel validation rules
+ * 3. beforeCreate() - Final modifications before persistence
+ * 4. Model::create() - Persist the record
+ * 5. afterCreate() - Post-creation operations (events, cache, etc.)
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error
- * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta, HttpStatusCode $code)
+ * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta, HttpStatusCode $code) Returns success response
+ * @method JsonResponse|ResponseInterface runValidation(array $data, array $rules) Validates data and returns error response if fails
  */
 trait Create
 {
@@ -39,6 +46,13 @@ trait Create
         }
 
         $this->beforeCreateFill($data);
+
+        $validationResponse = $this->runValidation($data, $this->createValidateRules());
+
+        if ($validationResponse !== null) {
+            return $validationResponse;
+        }
+
         $this->beforeCreate($data);
 
         $modelName = $this->modelClassName();
@@ -86,5 +100,31 @@ trait Create
      */
     protected function afterCreate(Model $record): void
     {
+    }
+
+    /**
+     * Define validation rules for the create action.
+     *
+     * Override this method to return Laravel validation rules.
+     * If rules are defined, the data will be validated after beforeCreateFill()
+     * and before beforeCreate().
+     *
+     * @return array<string, mixed> Laravel validation rules
+     *
+     * @example
+     * ```php
+     * protected function createValidateRules(): array
+     * {
+     *     return [
+     *         'name' => ['required', 'string', 'max:255'],
+     *         'email' => ['required', 'email', 'unique:users'],
+     *         'price' => ['required', 'numeric', 'min:0'],
+     *     ];
+     * }
+     * ```
+     */
+    protected function createValidateRules(): array
+    {
+        return [];
     }
 }

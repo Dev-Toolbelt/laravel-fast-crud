@@ -34,9 +34,9 @@ Traits implementing CRUD operations:
 
 | Action | Method | Route | Hooks |
 |--------|--------|-------|-------|
-| **Create** | `create()` | `POST /` | `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
+| **Create** | `create()` | `POST /` | `createValidateRules()`, `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
 | **Read** | `read()` | `GET /{id}` | `modifyReadQuery()`, `afterRead()` |
-| **Update** | `update()` | `PUT/PATCH/POST /{id}` | `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
+| **Update** | `update()` | `PUT/PATCH/POST /{id}` | `updateValidateRules()`, `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
 | **Delete** | `delete()` | `DELETE /{id}` | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
 | **SoftDelete** | `softDelete()` | `DELETE /{id}/soft` | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
 | **Restore** | `restore()` | `PATCH/PUT /{id}/restore` | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
@@ -44,8 +44,9 @@ Traits implementing CRUD operations:
 | **Options** | `options()` | `GET /options` | `modifyOptionsQuery()`, `afterOptions()` |
 | **ExportCsv** | `exportCsv()` | `GET /export-csv` | `modifyExportCsvQuery()` |
 
-### Query Traits (src/Traits/)
+### Traits (src/Traits/)
 
+- **Helpers** - Utility methods: `hasModelAttribute()`, `runValidation()`
 - **Searchable** - Filter with operators (`eq`, `neq`, `in`, `like`, `btw`, `gt`, `lt`, etc.) via `?filter[field][operator]=value`
 - **Sortable** - Sort via `?sort=field,-desc_field`
 - **Pageable** - Pagination via `?perPage=N` or `?skipPagination=true`
@@ -100,6 +101,7 @@ php artisan vendor:publish --tag=fast-crud-config
 4. **JSend Responses** - Uses `AnswerTrait` from `dev-toolbelt/jsend-payload` for response formatting
 5. **Auto-Discovery** - ServiceProvider registered automatically via Laravel package discovery
 6. **Custom Soft Delete** - Independent soft delete system with audit fields (deleted_at, deleted_by)
+7. **Built-in Validation** - Override `createValidateRules()` or `updateValidateRules()` for Laravel validation
 
 ## Model Requirements
 

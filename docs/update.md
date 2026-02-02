@@ -22,7 +22,139 @@ The action automatically handles:
 ## Lifecycle
 
 ```
-Request → UUID Validation → modifyUpdateQuery() → Find Record → beforeUpdateFill() → beforeUpdate() → Model::update() → afterUpdate() → Response
+Request → UUID Validation → beforeUpdateFill() → Validate Rules → modifyUpdateQuery() → Find Record → beforeUpdate() → Model::update() → afterUpdate() → Response
+```
+
+## Validation
+
+Define validation rules by overriding the `updateValidateRules()` method. This uses Laravel's built-in validation system, so all [Laravel validation rules](https://laravel.com/docs/validation#available-validation-rules) are supported.
+
+For partial updates, use `sometimes` to validate only when the field is present:
+
+```php
+protected function updateValidateRules(): array
+{
+    return [
+        'name' => ['sometimes', 'string', 'max:255'],
+        'email' => ['sometimes', 'email', 'unique:users,email,' . request()->route('id')],
+        'price' => ['sometimes', 'numeric', 'min:0'],
+    ];
+}
+```
+
+### When Validation Runs
+
+Validation runs **after** `beforeUpdateFill()` and **before** `modifyUpdateQuery()`. This allows you to transform or add data before validation and ensures validation happens before the record is fetched:
+
+```php
+protected function beforeUpdateFill(array &$data): void
+{
+    // Add audit field before validation
+    $data['updated_by'] = auth()->id();
+}
+
+protected function updateValidateRules(): array
+{
+    return [
+        'updated_by' => ['required', 'exists:users,id'],
+        'name' => ['sometimes', 'string', 'max:255'],
+    ];
+}
+```
+
+### Validation Error Response
+
+Validation errors return a 400 response with detailed information about each failed rule:
+
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "field": "name",
+            "error": "max",
+            "value": "This is a very long name that exceeds the maximum allowed characters...",
+            "message": "The name field must not be greater than 255 characters."
+        }
+    ],
+    "meta": []
+}
+```
+
+Each error contains:
+- `field`: The field name that failed validation
+- `error`: The validation rule name (lowercase)
+- `value`: The submitted value
+- `message`: Laravel's validation message
+
+### Common Validation Patterns
+
+**Unique constraint excluding current record:**
+```php
+protected function updateValidateRules(): array
+{
+    $id = request()->route('id');
+
+    return [
+        'email' => ['sometimes', 'email', "unique:users,email,{$id}"],
+        'slug' => ['sometimes', 'string', "unique:products,slug,{$id}"],
+    ];
+}
+```
+
+**Unique with UUID identifier:**
+```php
+protected function updateValidateRules(): array
+{
+    $id = request()->route('id');
+
+    return [
+        'email' => ['sometimes', 'email', "unique:users,email,{$id},id"],
+        // Or if using external_id as the route parameter:
+        // 'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($id, 'external_id')],
+    ];
+}
+```
+
+**Required vs Sometimes:**
+```php
+protected function updateValidateRules(): array
+{
+    return [
+        // Only validate if field is present (partial update)
+        'name' => ['sometimes', 'string', 'max:255'],
+
+        // Always required, even in partial updates
+        'status' => ['required', 'in:active,inactive'],
+
+        // Required only if present, with additional rules
+        'price' => ['sometimes', 'required', 'numeric', 'min:0'],
+    ];
+}
+```
+
+**Conditional rules:**
+```php
+protected function updateValidateRules(): array
+{
+    return [
+        'type' => ['sometimes', 'in:physical,digital'],
+        'weight' => ['required_if:type,physical', 'numeric', 'min:0'],
+        'download_url' => ['required_if:type,digital', 'url'],
+    ];
+}
+```
+
+**Nested/array validation:**
+```php
+protected function updateValidateRules(): array
+{
+    return [
+        'items' => ['sometimes', 'array', 'min:1'],
+        'items.*.product_id' => ['required_with:items', 'exists:products,id'],
+        'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
+    ];
+}
 ```
 
 ## Hooks
@@ -216,6 +348,18 @@ class ProductController extends CrudController
     protected function modelClassName(): string
     {
         return Product::class;
+    }
+
+    protected function updateValidateRules(): array
+    {
+        $id = request()->route('id');
+
+        return [
+            'name' => ['sometimes', 'string', 'max:255'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+            'category_id' => ['sometimes', 'exists:categories,id'],
+            'sku' => ['sometimes', 'string', "unique:products,sku,{$id}"],
+        ];
     }
 
     protected function modifyUpdateQuery(Builder $query): void

@@ -19,7 +19,125 @@ The action automatically handles:
 ## Lifecycle
 
 ```
-Request → beforeCreateFill() → beforeCreate() → Model::create() → afterCreate() → Response
+Request → beforeCreateFill() → Validate Rules → beforeCreate() → Model::create() → afterCreate() → Response
+```
+
+## Validation
+
+Define validation rules by overriding the `createValidateRules()` method. This uses Laravel's built-in validation system, so all [Laravel validation rules](https://laravel.com/docs/validation#available-validation-rules) are supported.
+
+```php
+protected function createValidateRules(): array
+{
+    return [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:users'],
+        'price' => ['required', 'numeric', 'min:0'],
+    ];
+}
+```
+
+### When Validation Runs
+
+Validation runs **after** `beforeCreateFill()` and **before** `beforeCreate()`. This allows you to transform or add data in `beforeCreateFill()` before validation:
+
+```php
+protected function beforeCreateFill(array &$data): void
+{
+    // Add company_id before validation
+    $data['company_id'] = auth()->user()->company_id;
+}
+
+protected function createValidateRules(): array
+{
+    return [
+        'company_id' => ['required', 'exists:companies,id'],
+        'name' => ['required', 'string', 'max:255'],
+    ];
+}
+```
+
+### Validation Error Response
+
+Validation errors return a 400 response with detailed information about each failed rule:
+
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "field": "name",
+            "error": "required",
+            "value": null,
+            "message": "The name field is required."
+        },
+        {
+            "field": "email",
+            "error": "email",
+            "value": "invalid-email",
+            "message": "The email field must be a valid email address."
+        }
+    ],
+    "meta": []
+}
+```
+
+Each error contains:
+- `field`: The field name that failed validation
+- `error`: The validation rule name (lowercase)
+- `value`: The submitted value (or null if not provided)
+- `message`: Laravel's validation message
+
+### Common Validation Patterns
+
+**Unique constraint:**
+```php
+protected function createValidateRules(): array
+{
+    return [
+        'email' => ['required', 'email', 'unique:users,email'],
+        'slug' => ['required', 'string', 'unique:products,slug'],
+    ];
+}
+```
+
+**Conditional rules:**
+```php
+protected function createValidateRules(): array
+{
+    return [
+        'type' => ['required', 'in:physical,digital'],
+        'weight' => ['required_if:type,physical', 'numeric', 'min:0'],
+        'download_url' => ['required_if:type,digital', 'url'],
+    ];
+}
+```
+
+**Nested/array validation:**
+```php
+protected function createValidateRules(): array
+{
+    return [
+        'items' => ['required', 'array', 'min:1'],
+        'items.*.product_id' => ['required', 'exists:products,id'],
+        'items.*.quantity' => ['required', 'integer', 'min:1'],
+    ];
+}
+```
+
+**With custom messages (using Laravel's standard approach):**
+```php
+protected function createValidateRules(): array
+{
+    return [
+        'email' => ['required', 'email', 'unique:users'],
+    ];
+}
+
+// In your AppServiceProvider or a dedicated ValidationServiceProvider:
+Validator::replacer('unique', function ($message, $attribute, $rule, $parameters) {
+    return "This {$attribute} is already taken.";
+});
 ```
 
 ## Hooks
@@ -170,6 +288,16 @@ class ProductController extends CrudController
         return Product::class;
     }
 
+    protected function createValidateRules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'sku' => ['sometimes', 'string', 'unique:products,sku'],
+        ];
+    }
+
     protected function beforeCreateFill(array &$data): void
     {
         $data['created_by'] = auth()->id();
@@ -178,7 +306,10 @@ class ProductController extends CrudController
     protected function beforeCreate(array &$data): void
     {
         $data['slug'] = Str::slug($data['name']);
-        $data['sku'] = $this->generateSku($data);
+
+        if (empty($data['sku'])) {
+            $data['sku'] = $this->generateSku($data);
+        }
     }
 
     protected function afterCreate(Model $record): void

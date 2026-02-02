@@ -17,6 +17,7 @@ use Psr\Http\Message\ResponseInterface;
 final class CreateActionTest extends TestCase
 {
     private object $controller;
+    private object $controllerWithValidation;
 
     protected function setUp(): void
     {
@@ -76,6 +77,99 @@ final class CreateActionTest extends TestCase
                 $this->successData = $data;
                 $statusCode = $code instanceof HttpStatusCode ? $code->value : ($code ?? 200);
                 return new JsonResponse(['status' => 'success', 'data' => $data], $statusCode);
+            }
+
+            protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
+            {
+                return null;
+            }
+        };
+
+        $this->controllerWithValidation = new class {
+            use Create;
+
+            public array $validationData = [];
+            public array $validationRules = [];
+            public bool $answerEmptyPayloadCalled = false;
+            public bool $answerSuccessCalled = false;
+            public bool $shouldFailValidation = false;
+            public array $failData = [];
+            public string $modelClass = '';
+
+            public function setModelClass(string $class): void
+            {
+                $this->modelClass = $class;
+            }
+
+            public function setShouldFailValidation(bool $shouldFail): void
+            {
+                $this->shouldFailValidation = $shouldFail;
+            }
+
+            protected function modelClassName(): string
+            {
+                return $this->modelClass;
+            }
+
+            protected function createValidateRules(): array
+            {
+                return [
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'email'],
+                ];
+            }
+
+            protected function beforeCreateFill(array &$data): void
+            {
+                $data['added_by_hook'] = true;
+            }
+
+            protected function beforeCreate(array &$data): void
+            {
+            }
+
+            protected function afterCreate(Model $record): void
+            {
+            }
+
+            protected function answerEmptyPayload(): JsonResponse|ResponseInterface
+            {
+                $this->answerEmptyPayloadCalled = true;
+                return new JsonResponse(['status' => 'fail'], 400);
+            }
+
+            protected function answerSuccess(
+                array $data,
+                array $meta = [],
+                mixed $code = null
+            ): JsonResponse|ResponseInterface {
+                $this->answerSuccessCalled = true;
+                $statusCode = $code instanceof HttpStatusCode ? $code->value : ($code ?? 200);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $statusCode);
+            }
+
+            protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
+            {
+                $this->validationData = $data;
+                $this->validationRules = $rules;
+
+                if (empty($rules)) {
+                    return null;
+                }
+
+                if ($this->shouldFailValidation) {
+                    $this->failData = [
+                        [
+                            'field' => 'name',
+                            'error' => 'required',
+                            'value' => $data['name'] ?? null,
+                            'message' => 'The name field is required.',
+                        ],
+                    ];
+                    return new JsonResponse(['status' => 'fail', 'data' => $this->failData], 400);
+                }
+
+                return null;
             }
         };
     }
@@ -173,6 +267,145 @@ final class CreateActionTest extends TestCase
 
         $this->assertArrayHasKey('id', $this->controller->successData);
         $this->assertArrayHasKey('name', $this->controller->successData);
+    }
+
+    public function testCreateValidationIsCalledWithRules(): void
+    {
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('create')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controllerWithValidation->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => 'Test Product',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        $this->assertNotEmpty($this->controllerWithValidation->validationRules);
+        $this->assertArrayHasKey('name', $this->controllerWithValidation->validationRules);
+        $this->assertArrayHasKey('email', $this->controllerWithValidation->validationRules);
+    }
+
+    public function testCreateValidationReceivesDataAfterBeforeCreateFill(): void
+    {
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('create')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controllerWithValidation->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => 'Test',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        // Data should include field added by beforeCreateFill
+        $this->assertArrayHasKey('added_by_hook', $this->controllerWithValidation->validationData);
+        $this->assertTrue($this->controllerWithValidation->validationData['added_by_hook']);
+    }
+
+    public function testCreateReturnsValidationErrorWhenValidationFails(): void
+    {
+        $this->controllerWithValidation->setShouldFailValidation(true);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => '',
+            'email' => 'invalid-email',
+        ]);
+
+        $response = $this->controllerWithValidation->create($request);
+
+        $this->assertNotEmpty($this->controllerWithValidation->failData);
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
+    public function testCreateValidationErrorContainsCorrectFields(): void
+    {
+        $this->controllerWithValidation->setShouldFailValidation(true);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => '',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        $this->assertNotEmpty($this->controllerWithValidation->failData);
+        $this->assertSame('name', $this->controllerWithValidation->failData[0]['field']);
+        $this->assertSame('required', $this->controllerWithValidation->failData[0]['error']);
+    }
+
+    public function testCreateValidationErrorContainsSubmittedValue(): void
+    {
+        $this->controllerWithValidation->setShouldFailValidation(true);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => '',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        $this->assertSame('name', $this->controllerWithValidation->failData[0]['field']);
+        $this->assertSame('', $this->controllerWithValidation->failData[0]['value']);
+    }
+
+    public function testCreateDoesNotProceedWhenValidationFails(): void
+    {
+        $this->controllerWithValidation->setShouldFailValidation(true);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => '',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        $this->assertNotEmpty($this->controllerWithValidation->failData);
+        $this->assertFalse($this->controllerWithValidation->answerSuccessCalled);
+    }
+
+    public function testCreateProceedsWhenValidationPasses(): void
+    {
+        $this->controllerWithValidation->setShouldFailValidation(false);
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('create')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controllerWithValidation->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([
+            'name' => 'Valid Name',
+            'email' => 'valid@example.com',
+        ]);
+
+        $this->controllerWithValidation->create($request);
+
+        $this->assertEmpty($this->controllerWithValidation->failData);
+        $this->assertTrue($this->controllerWithValidation->answerSuccessCalled);
     }
 
     private function setupModelMock(): Model

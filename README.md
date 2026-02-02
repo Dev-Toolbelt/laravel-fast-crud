@@ -7,6 +7,7 @@ A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTfu
 - Works exclusively with Laravel 11+
 - 9 pre-built actions (Create, Read, Update, Delete, Soft Delete, Restore, Search, Options, Export CSV)
 - 14+ search operators for flexible filtering (eq, like, between, in, json, etc.)
+- Built-in validation using Laravel's validation rules
 - Automatic route registration with permission middleware support
 - Hook system for customization without overriding entire methods
 - Global and per-action configuration
@@ -125,9 +126,9 @@ Customize behavior by overriding hooks in your controller:
 
 | Action | Available Hooks |
 |--------|-----------------|
-| Create | `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
+| Create | `createValidateRules()`, `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
 | Read | `modifyReadQuery()`, `afterRead()` |
-| Update | `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
+| Update | `updateValidateRules()`, `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
 | Delete | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
 | Soft Delete | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
 | Restore | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
@@ -175,8 +176,65 @@ class ProductController extends CrudController
     {
         return auth()->id();
     }
+
+    // Define validation rules for create
+    protected function createValidateRules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'numeric', 'min:0'],
+        ];
+    }
+
+    // Define validation rules for update
+    protected function updateValidateRules(): array
+    {
+        return [
+            'name' => ['sometimes', 'string', 'max:255'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+        ];
+    }
 }
 ```
+
+## Validation
+
+The package provides built-in validation using Laravel's validation system. Define rules by overriding `createValidateRules()` or `updateValidateRules()` methods.
+
+### Validation Error Response
+
+When validation fails, a 400 response is returned with detailed error information:
+
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "field": "email",
+            "error": "required",
+            "value": null,
+            "message": "The email field is required."
+        },
+        {
+            "field": "price",
+            "error": "numeric",
+            "value": "not-a-number",
+            "message": "The price field must be a number."
+        }
+    ],
+    "meta": []
+}
+```
+
+Each error includes:
+- `field`: The field that failed validation
+- `error`: The rule name (e.g., `required`, `email`, `max`, `unique`)
+- `value`: The submitted value
+- `message`: Laravel's validation message
+
+For detailed validation documentation, see:
+- [Create Action - Validation](docs/create.md#validation)
+- [Update Action - Validation](docs/update.md#validation)
 
 ## Configuration
 
@@ -314,8 +372,12 @@ All responses follow the [JSend specification](https://github.com/omniti-labs/js
 
 ## Documentation
 
-Detailed documentation for each action:
+Detailed documentation for each component:
 
+**Core:**
+- [Router](docs/router.md) - Route registration and permission middleware
+
+**Actions:**
 - [Create Action](docs/create.md)
 - [Read Action](docs/read.md)
 - [Update Action](docs/update.md)

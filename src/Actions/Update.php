@@ -15,13 +15,22 @@ use Psr\Http\Message\ResponseInterface;
  * Provides the update (PUT/PATCH/POST by ID) action for CRUD controllers.
  *
  * Updates an existing model instance with the request data.
- * Executes the lifecycle: beforeUpdateFill() -> beforeUpdate() -> update() -> afterUpdate()
+ *
+ * Lifecycle:
+ * 1. UUID validation (if configured)
+ * 2. beforeUpdateFill() - Transform or add data before validation
+ * 3. updateValidateRules() - Validate data using Laravel validation rules
+ * 4. modifyUpdateQuery() - Customize the query to find the record
+ * 5. beforeUpdate() - Final modifications before persistence
+ * 6. Model::update() - Persist the changes
+ * 7. afterUpdate() - Post-update operations (events, cache, etc.)
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
+ * @method JsonResponse|ResponseInterface runValidation(array $data, array $rules) Validates data and returns error response if fails
  */
 trait Update
 {
@@ -52,6 +61,14 @@ trait Update
             return $this->answerEmptyPayload();
         }
 
+        $this->beforeUpdateFill($data);
+
+        $validationResponse = $this->runValidation($data, $this->updateValidateRules());
+
+        if ($validationResponse !== null) {
+            return $validationResponse;
+        }
+
         $modelName = $this->modelClassName();
         $query = $modelName::query()->where($findField, $id);
         $this->modifyUpdateQuery($query);
@@ -63,7 +80,6 @@ trait Update
             return $this->answerRecordNotFound();
         }
 
-        $this->beforeUpdateFill($data);
         $this->beforeUpdate($record, $data);
         $record->update($data);
         $this->afterUpdate($record);
@@ -126,5 +142,33 @@ trait Update
      */
     protected function afterUpdate(Model $record): void
     {
+    }
+
+    /**
+     * Define validation rules for the update action.
+     *
+     * Override this method to return Laravel validation rules.
+     * If rules are defined, the data will be validated after beforeUpdateFill()
+     * and before finding the record.
+     *
+     * For partial updates, use the 'sometimes' rule to only validate fields that are present.
+     *
+     * @return array<string, mixed> Laravel validation rules
+     *
+     * @example
+     * ```php
+     * protected function updateValidateRules(): array
+     * {
+     *     return [
+     *         'name' => ['sometimes', 'string', 'max:255'],
+     *         'email' => ['sometimes', 'email', 'unique:users,email,' . request()->route('id')],
+     *         'price' => ['sometimes', 'numeric', 'min:0'],
+     *     ];
+     * }
+     * ```
+     */
+    protected function updateValidateRules(): array
+    {
+        return [];
     }
 }
