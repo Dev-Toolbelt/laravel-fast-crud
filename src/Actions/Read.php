@@ -31,12 +31,12 @@ trait Read
      */
     public function read(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
-        $method = $method ?? config('devToolbelt.fast_crud.read.method', 'toArray');
-        $findField = config('devToolbelt.fast_crud.read.find_field')
-            ?? config('devToolbelt.fast_crud.global.find_field', 'id');
+        $method = $method ?? config('devToolbelt.fast-crud.read.method', 'toArray');
+        $findField = config('devToolbelt.fast-crud.read.find_field')
+            ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
-        $isUuid = config('devToolbelt.fast_crud.read.find_field_is_uuid')
-            ?? config('devToolbelt.fast_crud.global.find_field_is_uuid', false);
+        $isUuid = config('devToolbelt.fast-crud.read.find_field_is_uuid')
+            ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid();

@@ -31,11 +31,11 @@ trait Delete
      */
     public function delete(string $id): JsonResponse|ResponseInterface
     {
-        $findField = config('devToolbelt.fast_crud.delete.find_field')
-            ?? config('devToolbelt.fast_crud.global.find_field', 'id');
+        $findField = config('devToolbelt.fast-crud.delete.find_field')
+            ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
-        $isUuid = config('devToolbelt.fast_crud.delete.find_field_is_uuid')
-            ?? config('devToolbelt.fast_crud.global.find_field_is_uuid', false);
+        $isUuid = config('devToolbelt.fast-crud.delete.find_field_is_uuid')
+            ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid();

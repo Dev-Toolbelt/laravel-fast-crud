@@ -41,7 +41,7 @@ trait Options
      */
     public function options(Request $request): JsonResponse|ResponseInterface
     {
-        $defaultValue = config('devToolbelt.fast_crud.options.default_value', 'id');
+        $defaultValue = config('devToolbelt.fast-crud.options.default_value', 'id');
         $value = $request->get('value', $defaultValue);
         $label = $request->get('label');
 

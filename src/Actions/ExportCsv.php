@@ -80,7 +80,7 @@ trait ExportCsv
      */
     public function exportCsv(Request $request, ?string $method = null): StreamedResponse
     {
-        $method = $method ?? config('devToolbelt.fast_crud.export_csv.method', 'toArray');
+        $method = $method ?? config('devToolbelt.fast-crud.export_csv.method', 'toArray');
         $modelName = $this->modelClassName();
         $query = $modelName::query();
         $isAssociative = array_keys($this->csvColumns) !== range(0, count($this->csvColumns) - 1);

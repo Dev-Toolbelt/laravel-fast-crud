@@ -53,8 +53,8 @@ trait Search
      */
     public function search(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
-        $method = $method ?? config('devToolbelt.fast_crud.search.method', 'toArray');
-        $defaultPerPage = config('devToolbelt.fast_crud.search.per_page', 40);
+        $method = $method ?? config('devToolbelt.fast-crud.search.method', 'toArray');
+        $defaultPerPage = config('devToolbelt.fast-crud.search.per_page', 40);
         $perPage = (int) $request->input('perPage', $defaultPerPage);
         $modelName = $this->modelClassName();
         $query = $modelName::query();

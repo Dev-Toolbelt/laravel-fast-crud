@@ -38,7 +38,7 @@ trait Create
      */
     public function create(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
-        $method = $method ?? config('devToolbelt.fast_crud.create.method', 'toArray');
+        $method = $method ?? config('devToolbelt.fast-crud.create.method', 'toArray');
         $data = $request->post();
 
         if (empty($data)) {

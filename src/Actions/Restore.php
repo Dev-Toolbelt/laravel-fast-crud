@@ -34,15 +34,15 @@ trait Restore
      */
     public function restore(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
-        $method = $method ?? config('devToolbelt.fast_crud.restore.method', 'toArray');
-        $findField = config('devToolbelt.fast_crud.restore.find_field')
-            ?? config('devToolbelt.fast_crud.global.find_field', 'id');
+        $method = $method ?? config('devToolbelt.fast-crud.restore.method', 'toArray');
+        $findField = config('devToolbelt.fast-crud.restore.find_field')
+            ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
-        $isUuid = config('devToolbelt.fast_crud.restore.find_field_is_uuid')
-            ?? config('devToolbelt.fast_crud.global.find_field_is_uuid', false);
+        $isUuid = config('devToolbelt.fast-crud.restore.find_field_is_uuid')
+            ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
-        $deletedAtField = config('devToolbelt.fast_crud.soft_delete.deleted_at_field', 'deleted_at');
-        $deletedByField = config('devToolbelt.fast_crud.soft_delete.deleted_by_field', 'deleted_by');
+        $deletedAtField = config('devToolbelt.fast-crud.soft_delete.deleted_at_field', 'deleted_at');
+        $deletedByField = config('devToolbelt.fast-crud.soft_delete.deleted_by_field', 'deleted_by');
 
         if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid();
