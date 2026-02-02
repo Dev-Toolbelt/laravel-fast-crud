@@ -19,7 +19,7 @@ class FastCrudServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/fast-crud.php',
+            __DIR__ . '/../config/fast_crud.php',
             'devToolbelt.fast_crud'
         );
     }
@@ -31,7 +31,7 @@ class FastCrudServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/fast-crud.php' => config_path('devToolbelt/fast-crud.php'),
+                __DIR__ . '/../config/fast_crud.php' => config_path('devToolbelt/fast_crud.php'),
             ], 'fast-crud-config');
         }
     }
