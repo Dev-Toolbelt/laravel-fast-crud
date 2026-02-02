@@ -1,17 +1,18 @@
 # Laravel Fast CRUD
 
-A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTful APIs in minutes with minimal boilerplate.
+A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTful APIs in minutes with minimal boilerplate, following best practices and the [JSend specification](https://github.com/omniti-labs/jsend).
 
 ## Features
 
-- **9 Pre-built Actions** - Create, Read, Update, Delete, Soft Delete, Restore, Search, Options, Export CSV
-- **Flexible Filtering** - 14+ search operators (eq, like, between, in, json, etc.)
-- **Automatic Routing** - Single line to register all CRUD routes with permissions
-- **Hook System** - Customize behavior without overriding entire methods
-- **Configurable** - Global and per-action configuration
-- **Soft Delete with Audit** - Track who deleted records and when
-- **CSV Export** - Export filtered data with custom column mapping
-- **JSend Responses** - Consistent API response format
+- Works exclusively with Laravel 11+
+- 9 pre-built actions (Create, Read, Update, Delete, Soft Delete, Restore, Search, Options, Export CSV)
+- 14+ search operators for flexible filtering (eq, like, between, in, json, etc.)
+- Automatic route registration with permission middleware support
+- Hook system for customization without overriding entire methods
+- Global and per-action configuration
+- Soft delete with audit trail (who deleted and when)
+- CSV export with custom column mapping and dot notation support
+- Consistent API responses following JSend specification
 
 ## Requirements
 
@@ -60,64 +61,25 @@ use DevToolbelt\LaravelFastCrud\Router;
 Router::crud('products', ProductController::class, 'products');
 ```
 
-That's it! You now have a complete CRUD API:
+That's it! You now have a complete CRUD API.
 
-| Method | Route | Action | Description |
-|--------|-------|--------|-------------|
-| GET | `/products` | search | List with filtering, sorting, pagination |
-| POST | `/products` | create | Create a new record |
-| GET | `/products/{id}` | read | Get a single record |
-| PUT/PATCH | `/products/{id}` | update | Update a record |
-| DELETE | `/products/{id}` | delete | Permanently delete a record |
-| DELETE | `/products/{id}/soft` | softDelete | Soft delete a record |
-| PATCH/PUT | `/products/{id}/restore` | restore | Restore a soft deleted record |
-| GET | `/products/options` | options | Get label-value pairs for dropdowns |
-| GET | `/products/export-csv` | exportCsv | Export to CSV file |
+## Available Actions
 
-## Documentation
-
-Detailed documentation for each action:
-
-- [Create Action](docs/create.md) - Creating records with hooks
-- [Read Action](docs/read.md) - Reading single records
-- [Update Action](docs/update.md) - Updating records with hooks
-- [Delete Action](docs/delete.md) - Permanent deletion
-- [Soft Delete Action](docs/soft-delete.md) - Soft deletion with audit
-- [Restore Action](docs/restore.md) - Restoring soft deleted records
-- [Search Action](docs/search.md) - Filtering, sorting, pagination
-- [Options Action](docs/options.md) - Dropdown data
-- [Export CSV Action](docs/export-csv.md) - CSV export
-
-## Configuration
-
-```php
-// config/devToolbelt/fast-crud.php
-
-return [
-    // Global settings (applied to all actions)
-    'global' => [
-        'find_field' => 'id',           // Field to find records by
-        'find_field_is_uuid' => false,  // Validate as UUID
-    ],
-
-    // Per-action settings (override global)
-    'create' => ['method' => 'toArray'],
-    'read' => ['method' => 'toArray'],
-    'update' => ['method' => 'toArray'],
-    'delete' => [],
-    'soft_delete' => [
-        'deleted_at_field' => 'deleted_at',
-        'deleted_by_field' => 'deleted_by',
-    ],
-    'restore' => ['method' => 'toArray'],
-    'search' => ['method' => 'toArray', 'per_page' => 40],
-    'export_csv' => ['method' => 'toArray'],
-];
-```
+| Action | Method | Route | Description |
+|--------|--------|-------|-------------|
+| Search | `GET` | `/products` | List with filtering, sorting, pagination |
+| Create | `POST` | `/products` | Create a new record |
+| Read | `GET` | `/products/{id}` | Get a single record |
+| Update | `PUT/PATCH` | `/products/{id}` | Update a record |
+| Delete | `DELETE` | `/products/{id}` | Permanently delete a record |
+| Soft Delete | `DELETE` | `/products/{id}/soft` | Soft delete with audit |
+| Restore | `PATCH/PUT` | `/products/{id}/restore` | Restore a soft deleted record |
+| Options | `GET` | `/products/options` | Label-value pairs for HTML selects |
+| Export CSV | `GET` | `/products/export-csv` | Export filtered data to CSV |
 
 ## Search Operators
 
-Filter your data with powerful operators:
+Filter your data with powerful operators via query string:
 
 ```
 GET /products?filter[name][like]=Samsung&filter[price][gte]=100&filter[status][in]=active,pending
@@ -127,20 +89,22 @@ GET /products?filter[name][like]=Samsung&filter[price][gte]=100&filter[status][i
 |----------|-------------|---------|
 | `eq` | Equals | `filter[status][eq]=active` |
 | `neq` | Not equals | `filter[status][neq]=deleted` |
-| `like` | Contains (LIKE %value%) | `filter[name][like]=phone` |
+| `like` | Contains (ILIKE %value%) | `filter[name][like]=phone` |
 | `in` | In list | `filter[status][in]=a,b,c` |
 | `nin` | Not in list | `filter[status][nin]=x,y` |
 | `gt` | Greater than | `filter[price][gt]=100` |
 | `gte` | Greater than or equal | `filter[price][gte]=100` |
 | `lt` | Less than | `filter[price][lt]=500` |
 | `lte` | Less than or equal | `filter[price][lte]=500` |
-| `btw` | Between | `filter[price][btw]=100,500` |
+| `btw` | Between (dates or numbers) | `filter[created_at][btw]=2024-01-01,2024-12-31` |
+| `gtn` | Greater than or NULL | `filter[stock][gtn]=10` |
+| `ltn` | Less than or NULL | `filter[stock][ltn]=5` |
 | `nn` | Not null | `filter[deleted_at][nn]=1` |
 | `json` | JSON contains | `filter[tags][json]=electronics` |
 
 ## Sorting
 
-Sort by one or multiple fields:
+Sort by one or multiple fields (prefix with `-` for descending):
 
 ```
 GET /products?sort=name              # ASC by name
@@ -151,13 +115,27 @@ GET /products?sort=category,-price   # ASC category, DESC price
 ## Pagination
 
 ```
-GET /products?perPage=20             # 20 items per page
+GET /products?perPage=20             # 20 items per page (default: 40)
 GET /products?skipPagination=true    # Return all records
 ```
 
-## Customization with Hooks
+## Available Hooks
 
-Override hooks to customize behavior:
+Customize behavior by overriding hooks in your controller:
+
+| Action | Available Hooks |
+|--------|-----------------|
+| Create | `beforeCreateFill()`, `beforeCreate()`, `afterCreate()` |
+| Read | `modifyReadQuery()`, `afterRead()` |
+| Update | `modifyUpdateQuery()`, `beforeUpdateFill()`, `beforeUpdate()`, `afterUpdate()` |
+| Delete | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
+| Soft Delete | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
+| Restore | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
+| Search | `modifySearchQuery()`, `afterSearch()` |
+| Options | `modifyOptionsQuery()`, `afterOptions()` |
+| Export CSV | `modifyExportCsvQuery()` |
+
+### Hook Examples
 
 ```php
 class ProductController extends CrudController
@@ -167,25 +145,25 @@ class ProductController extends CrudController
         return Product::class;
     }
 
-    // Add data before creation
+    // Add data before filling the model
     protected function beforeCreateFill(array &$data): void
     {
         $data['created_by'] = auth()->id();
     }
 
-    // Modify data before creation
+    // Modify data before saving
     protected function beforeCreate(array &$data): void
     {
         $data['slug'] = Str::slug($data['name']);
     }
 
-    // Actions after creation
+    // Dispatch events after creation
     protected function afterCreate(Model $record): void
     {
         event(new ProductCreated($record));
     }
 
-    // Add eager loading to search
+    // Add eager loading and scopes to search
     protected function modifySearchQuery(Builder $query): void
     {
         $query->with(['category', 'brand'])
@@ -200,23 +178,53 @@ class ProductController extends CrudController
 }
 ```
 
+## Configuration
+
+```php
+// config/devToolbelt/fast-crud.php
+
+return [
+    // Global settings (applied to all actions)
+    'global' => [
+        'find_field' => 'id',           // Field to find records by
+        'find_field_is_uuid' => false,  // Validate as UUID before querying
+    ],
+
+    // Per-action settings (override global)
+    'create' => ['method' => 'toArray'],
+    'read' => ['method' => 'toArray'],
+    'update' => ['method' => 'toArray'],
+    'delete' => [],
+    'soft_delete' => [
+        'deleted_at_field' => 'deleted_at',
+        'deleted_by_field' => 'deleted_by',
+    ],
+    'restore' => ['method' => 'toArray'],
+    'search' => ['method' => 'toArray', 'per_page' => 40],
+    'options' => ['default_value' => 'id'],
+    'export_csv' => ['method' => 'toArray'],
+];
+```
+
 ## Selective Route Registration
 
 Include or exclude specific actions:
 
 ```php
-// Only search and read
+// Only search and read (read-only API)
 Router::crud('products', ProductController::class, 'products',
     only: ['search', 'read']
 );
 
-// Everything except delete
+// Everything except permanent delete
 Router::crud('products', ProductController::class, 'products',
-    except: ['delete', 'softDelete']
+    except: ['delete']
 );
 ```
 
-## CSV Export Configuration
+## CSV Export
+
+Configure CSV export with custom columns and nested relationships:
 
 ```php
 class ProductController extends CrudController
@@ -225,7 +233,7 @@ class ProductController extends CrudController
 
     protected array $csvColumns = [
         'name' => 'Product Name',
-        'category.name' => 'Category',    // Supports dot notation
+        'category.name' => 'Category',    // Dot notation for relationships
         'price' => 'Price',
         'created_at' => 'Created At',
     ];
@@ -236,20 +244,87 @@ class ProductController extends CrudController
 
 All responses follow the [JSend specification](https://github.com/omniti-labs/jsend):
 
+**Success Response:**
 ```json
 {
     "status": "success",
-    "data": { ... },
+    "data": { ... }
+}
+```
+
+**Success with Pagination:**
+```json
+{
+    "status": "success",
+    "data": [ ... ],
     "meta": {
         "pagination": {
-            "total": 100,
-            "per_page": 20,
-            "current_page": 1,
-            "last_page": 5
+            "current": 1,
+            "perPage": 40,
+            "pagesCount": 5,
+            "count": 200
         }
     }
 }
 ```
+
+**Fail Response (client error):**
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "field": "id",
+            "error": "recordNotFound",
+            "message": "The record was not found with the given id"
+        }
+    ],
+    "meta": []
+}
+```
+
+**Empty Payload Error:**
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "error": "emptyPayload",
+            "message": "It was send a empty payload"
+        }
+    ],
+    "meta": []
+}
+```
+
+**Invalid UUID Error:**
+```json
+{
+    "status": "fail",
+    "data": [
+        {
+            "field": "id",
+            "error": "invalidUuidFormat",
+            "message": "The provided uuid format is invalid"
+        }
+    ],
+    "meta": []
+}
+```
+
+## Documentation
+
+Detailed documentation for each action:
+
+- [Create Action](docs/create.md)
+- [Read Action](docs/read.md)
+- [Update Action](docs/update.md)
+- [Delete Action](docs/delete.md)
+- [Soft Delete Action](docs/soft-delete.md)
+- [Restore Action](docs/restore.md)
+- [Search Action](docs/search.md)
+- [Options Action](docs/options.md)
+- [Export CSV Action](docs/export-csv.md)
 
 ## License
 

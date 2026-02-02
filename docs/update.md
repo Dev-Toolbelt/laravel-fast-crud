@@ -168,9 +168,14 @@ Error - Not Found (404):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Record not found"
-    }
+    "data": [
+        {
+            "field": "id",
+            "error": "recordNotFound",
+            "message": "The record was not found with the given id"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -179,9 +184,13 @@ Error - Empty Payload (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Empty payload"
-    }
+    "data": [
+        {
+            "error": "emptyPayload",
+            "message": "It was send a empty payload"
+        }
+    ],
+    "meta": []
 }
 ```
 

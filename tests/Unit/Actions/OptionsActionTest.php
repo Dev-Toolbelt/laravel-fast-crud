@@ -20,6 +20,7 @@ final class OptionsActionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->mockConfig();
 
         $this->controller = new class {
             use Options;
@@ -85,7 +86,7 @@ final class OptionsActionTest extends TestCase
     public function testOptionsReturnsRequiredWhenLabelMissing(): void
     {
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('external_id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn(null);
 
         $this->controller->options($request);
@@ -155,7 +156,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('external_id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn('invalid_column');
 
         $this->controller->options($request);
@@ -171,7 +172,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('external_id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn('name');
 
         $this->controller->options($request);
@@ -186,7 +187,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('external_id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn('name');
 
         $this->controller->options($request);
@@ -201,7 +202,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('external_id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn('name');
 
         $response = $this->controller->options($request);
@@ -217,7 +218,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('get')->with('value', 'external_id')->andReturn('id');
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
         $request->shouldReceive('get')->with('label')->andReturn('name');
 
         $this->controller->options($request);
@@ -300,5 +301,31 @@ final class OptionsActionTest extends TestCase
         $fullClassName::$modelInstance = $modelMock;
 
         return $fullClassName;
+    }
+
+    private function mockConfig(array $overrides = []): void
+    {
+        $defaults = [
+            'devToolbelt.fast_crud.options.default_value' => 'id',
+        ];
+
+        $config = array_merge($defaults, $overrides);
+
+        if (!function_exists('DevToolbelt\LaravelFastCrud\Actions\config')) {
+            eval('
+                namespace DevToolbelt\LaravelFastCrud\Actions;
+
+                function config($key, $default = null) {
+                    static $config = [];
+                    if (is_array($key)) {
+                        $config = array_merge($config, $key);
+                        return null;
+                    }
+                    return $config[$key] ?? $default;
+                }
+            ');
+        }
+
+        \DevToolbelt\LaravelFastCrud\Actions\config($config);
     }
 }

@@ -178,9 +178,14 @@ Error - Column Not Found (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Column not found: deleted_by"
-    }
+    "data": [
+        {
+            "field": "deleted_by",
+            "error": "columnNotFound",
+            "message": "Column not found: deleted_by"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -189,9 +194,14 @@ Error - Not Found (404):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Record not found"
-    }
+    "data": [
+        {
+            "field": "id",
+            "error": "recordNotFound",
+            "message": "The record was not found with the given id"
+        }
+    ],
+    "meta": []
 }
 ```
 

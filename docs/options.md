@@ -1,6 +1,8 @@
 # Options Action
 
-The Options action handles GET requests to retrieve label-value pairs suitable for populating select dropdowns, autocomplete fields, and other UI components.
+The Options action handles GET requests to retrieve label-value pairs specifically designed for populating HTML `<select>` elements, autocomplete fields, comboboxes, and similar UI components that require a list of choices.
+
+This endpoint is optimized for frontend select components, returning a simple and consistent format that can be directly consumed by popular frontend frameworks like Vue.js, React, Angular, or vanilla JavaScript.
 
 ## Route
 
@@ -10,22 +12,44 @@ GET /{resource}/options
 
 ## Basic Usage
 
-The action returns a simple array of objects with `label` and `value` properties:
+The action returns a simple array of objects with `label` and `value` properties, ready to be used in HTML `<select>` elements:
 
 ```json
 [
-    {"label": "Electronics", "value": "uuid-1"},
-    {"label": "Clothing", "value": "uuid-2"},
-    {"label": "Home & Garden", "value": "uuid-3"}
+    {"label": "Electronics", "value": 1},
+    {"label": "Clothing", "value": 2},
+    {"label": "Home & Garden", "value": 3}
 ]
 ```
+
+Each object represents an `<option>` element where:
+- `label` = the text displayed to the user
+- `value` = the value submitted when the option is selected
 
 ## Query Parameters
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `label` | Yes | - | Column to use as display label |
-| `value` | No | `external_id` | Column to use as value |
+| `label` | Yes | - | Column to use as display label (text shown to user) |
+| `value` | No | `id` (configurable) | Column to use as the option value (submitted when selected) |
+
+## Configuration
+
+Configure the default value column in `config/fast-crud.php`:
+
+```php
+'options' => [
+    'default_value' => 'id', // Default column for option values
+],
+```
+
+This allows you to set a project-wide default for the `value` parameter. For example, if your application uses UUIDs:
+
+```php
+'options' => [
+    'default_value' => 'uuid',
+],
+```
 
 ## Lifecycle
 
@@ -77,14 +101,17 @@ protected function afterOptions(array $rows): void
 ## Request Examples
 
 ```bash
-# Basic - using name as label, external_id as value (default)
+# Basic - using name as label, id as value (default)
 GET /categories/options?label=name
 
-# Custom value field
-GET /categories/options?label=name&value=id
+# Using UUID as value
+GET /categories/options?label=name&value=uuid
 
-# Using slug as value
+# Using slug as value (useful for URL-friendly selects)
 GET /categories/options?label=name&value=slug
+
+# Using external_id as value
+GET /categories/options?label=name&value=external_id
 ```
 
 ## Response Examples
@@ -107,9 +134,14 @@ Error - Missing Label (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "The label field is required"
-    }
+    "data": [
+        {
+            "field": "label",
+            "error": "required",
+            "message": "The label field is required"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -118,9 +150,14 @@ Error - Column Not Found (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Column not found: label"
-    }
+    "data": [
+        {
+            "field": "label",
+            "error": "columnNotFound",
+            "message": "Column not found: label"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -167,13 +204,29 @@ class CategoryController extends CrudController
 }
 ```
 
+## HTML Select Usage
+
+The response format is designed to directly populate HTML `<select>` elements:
+
+```html
+<select name="category_id" id="category">
+    <option value="">Select a category</option>
+    <!-- Options populated from API response -->
+    <option value="1">Electronics</option>
+    <option value="2">Clothing</option>
+    <option value="3">Home & Garden</option>
+</select>
+```
+
+The `value` property becomes the `value` attribute of `<option>`, and `label` becomes the displayed text.
+
 ## Frontend Usage Examples
 
 ### Vue.js
 
 ```vue
 <template>
-  <select v-model="selectedCategory">
+  <select v-model="selectedCategory" name="category_id">
     <option value="">Select a category</option>
     <option v-for="option in categories" :key="option.value" :value="option.value">
       {{ option.label }}
@@ -190,7 +243,8 @@ export default {
     }
   },
   async mounted() {
-    const response = await fetch('/api/categories/options?label=name&value=id')
+    // Uses 'id' as default value column (configurable in config/fast-crud.php)
+    const response = await fetch('/api/categories/options?label=name')
     const result = await response.json()
     this.categories = result.data
   }
@@ -207,13 +261,14 @@ function CategorySelect({ value, onChange }) {
   const [options, setOptions] = useState([]);
 
   useEffect(() => {
-    fetch('/api/categories/options?label=name&value=id')
+    // Uses 'id' as default value column (configurable in config/fast-crud.php)
+    fetch('/api/categories/options?label=name')
       .then(res => res.json())
       .then(result => setOptions(result.data));
   }, []);
 
   return (
-    <select value={value} onChange={e => onChange(e.target.value)}>
+    <select name="category_id" value={value} onChange={e => onChange(e.target.value)}>
       <option value="">Select a category</option>
       {options.map(option => (
         <option key={option.value} value={option.value}>
@@ -225,16 +280,16 @@ function CategorySelect({ value, onChange }) {
 }
 ```
 
-## Hierarchical Options
+## Hierarchical Options (Dependent Selects)
 
-For parent-child relationships, use query parameters:
+For parent-child relationships (e.g., Country > State > City), use query parameters to filter options:
 
 ```bash
-# Get root categories
-GET /categories/options?label=name&value=id
+# Get root categories (for first select)
+GET /categories/options?label=name
 
-# Get subcategories of parent
-GET /categories/options?label=name&value=id&parent_id=5
+# Get subcategories of parent (for dependent select)
+GET /categories/options?label=name&parent_id=5
 ```
 
 Handle in controller:

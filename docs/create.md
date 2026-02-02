@@ -140,9 +140,13 @@ Error - Empty Payload (400 Bad Request):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Empty payload"
-    }
+    "data": [
+        {
+            "error": "emptyPayload",
+            "message": "It was send a empty payload"
+        }
+    ],
+    "meta": []
 }
 ```
 

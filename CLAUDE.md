@@ -74,6 +74,7 @@ Global settings apply to all actions, but can be overridden per action:
 ],
 'restore' => ['method' => 'toArray'],
 'search' => ['method' => 'toArray', 'per_page' => 40],
+'options' => ['default_value' => 'id'],
 'export_csv' => ['method' => 'toArray'],
 ```
 
@@ -84,6 +85,7 @@ Global settings apply to all actions, but can be overridden per action:
 - `per_page`: Default pagination size (search only)
 - `deleted_at_field`: Column for soft delete timestamp (soft_delete only)
 - `deleted_by_field`: Column for soft delete user ID (soft_delete only)
+- `default_value`: Default value column for options endpoint (options only)
 
 Action-specific settings override global. Publish with:
 ```bash

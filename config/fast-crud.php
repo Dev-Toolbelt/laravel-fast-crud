@@ -61,6 +61,10 @@ return [
         'per_page' => 40,
     ],
 
+    'options' => [
+        'default_value' => 'id',
+    ],
+
     'export_csv' => [
         'method' => 'toArray',
     ],

@@ -158,9 +158,14 @@ Error - Column Not Found (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Column not found: deleted_at"
-    }
+    "data": [
+        {
+            "field": "deleted_at",
+            "error": "columnNotFound",
+            "message": "Column not found: deleted_at"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -169,9 +174,14 @@ Error - Not Found (404):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Record not found"
-    }
+    "data": [
+        {
+            "field": "id",
+            "error": "recordNotFound",
+            "message": "The record was not found with the given id"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -244,23 +254,31 @@ class ProductController extends CrudController
 
 ## Listing Soft Deleted Records
 
-To show users what they can restore, create a custom endpoint:
+Use the Search endpoint with the `nn` (not null) operator to list soft deleted records:
+
+```bash
+# List all soft deleted products
+GET /products?filter[deleted_at][nn]=1
+
+# With pagination
+GET /products?filter[deleted_at][nn]=1&perPage=20
+
+# Filter by date range (deleted in last 30 days)
+GET /products?filter[deleted_at][nn]=1&filter[deleted_at][gte]=2024-01-01
+
+# Sort by most recently deleted
+GET /products?filter[deleted_at][nn]=1&sort=-deleted_at
+```
+
+Configure your controller to include soft deleted records in search and eager load the user who deleted:
 
 ```php
-// In routes/api.php
-Route::get('products/trashed', [ProductController::class, 'trashed']);
-
-// In ProductController
-public function trashed(Request $request): JsonResponse
+protected function modifySearchQuery(Builder $query): void
 {
-    $records = Product::query()
-        ->whereNotNull('deleted_at')
-        ->where('store_id', auth()->user()->store_id)
-        ->where('deleted_at', '>=', now()->subDays(30))
-        ->with('deletedBy:id,name')
-        ->paginate($request->input('perPage', 20));
-
-    return $this->answerSuccess($records->toArray());
+    // Include deletedBy relationship when filtering soft deleted
+    if (request()->has('filter.deleted_at')) {
+        $query->with('deletedBy:id,name');
+    }
 }
 ```
 

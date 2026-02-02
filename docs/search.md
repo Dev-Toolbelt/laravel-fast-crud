@@ -26,6 +26,8 @@ The action automatically handles:
 | `perPage` | Items per page | `perPage=20` |
 | `skipPagination` | Return all records | `skipPagination=true` |
 
+> **📖 Complete Guide:** For a comprehensive reference with SQL equivalents and best practices, see the [API Query String Guide](search-query-string-guide.md).
+
 ## Filtering
 
 ### Available Operators
@@ -202,12 +204,10 @@ curl "http://api.example.com/products?filter[name][like]=phone&filter[status][in
     ],
     "meta": {
         "pagination": {
-            "total": 150,
-            "per_page": 20,
-            "current_page": 1,
-            "last_page": 8,
-            "from": 1,
-            "to": 20
+            "current": 1,
+            "perPage": 20,
+            "pagesCount": 8,
+            "count": 150
         }
     }
 }
@@ -317,5 +317,6 @@ protected function modifySearchQuery(Builder $query): void
 
 ## Related
 
+- [API Query String Guide](search-query-string-guide.md) - Complete reference with SQL equivalents and best practices
 - [Options Action](options.md) - Get dropdown values
 - [Export CSV Action](export-csv.md) - Export search results

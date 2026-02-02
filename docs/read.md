@@ -137,9 +137,14 @@ Error - Not Found (404):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Record not found"
-    }
+    "data": [
+        {
+            "field": "id",
+            "error": "recordNotFound",
+            "message": "The record was not found with the given id"
+        }
+    ],
+    "meta": []
 }
 ```
 
@@ -148,9 +153,14 @@ Error - Invalid UUID (400):
 ```json
 {
     "status": "fail",
-    "data": {
-        "message": "Invalid UUID"
-    }
+    "data": [
+        {
+            "field": "id",
+            "error": "invalidUuidFormat",
+            "message": "The provided uuid format is invalid"
+        }
+    ],
+    "meta": []
 }
 ```
 
