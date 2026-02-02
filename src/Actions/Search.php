@@ -21,7 +21,7 @@ use Psr\Http\Message\ResponseInterface;
  * Supports the following query parameters:
  * - filter[column][operator]=value - Filter records (see SearchOperator enum)
  * - sort=column,-desc_column - Sort by columns (prefix with - for DESC)
- * - perPage=N - Items per page (default: 40)
+ * - perPage=N - Items per page (default from config or 40)
  * - skipPagination=true - Return all records without pagination
  *
  * @method string modelClassName() Returns the Eloquent model class name
@@ -54,13 +54,15 @@ trait Search
     public function search(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast_crud.search.method', 'toArray');
+        $defaultPerPage = config('devToolbelt.fast_crud.search.per_page', 40);
+        $perPage = (int) $request->input('perPage', $defaultPerPage);
         $modelName = $this->modelClassName();
         $query = $modelName::query();
 
         $this->modifySearchQuery($query);
         $this->processSearch($query, $request->get('filter', []));
         $this->processSort($query, $request->input('sort', ''));
-        $this->buildPagination($query, (int) $request->input('perPage', 40), $method);
+        $this->buildPagination($query, $perPage, $method);
 
         return $this->answerSuccess($this->data, meta: [
             'pagination' => $this->paginationData

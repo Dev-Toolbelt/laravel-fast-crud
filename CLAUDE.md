@@ -52,24 +52,34 @@ Defines operators: `eq`, `neq`, `in`, `nin`, `like`, `lt`, `gt`, `lte`, `gte`, `
 
 ### Configuration (config/fast-crud.php)
 
-Configures the default model serialization method for each action:
+Global settings apply to all actions, but can be overridden per action:
 
 ```php
+'global' => [
+    'find_field' => 'id',
+    'find_field_is_uuid' => false,
+],
 'create' => ['method' => 'toArray'],
 'read' => ['method' => 'toArray'],
 'update' => ['method' => 'toArray'],
-'search' => ['method' => 'toArray'],
+'delete' => [],
+'search' => ['method' => 'toArray', 'per_page' => 40],
 'export_csv' => ['method' => 'toArray'],
 ```
 
-Access via `config('devToolbelt.fast_crud.{action}.method')`. Publish with:
+- `find_field`: Database column for finding records (global or per action)
+- `find_field_is_uuid`: Validate identifier as UUID before querying (global or per action)
+- `method`: Model serialization method (`toArray`, `toSoftArray`, or custom)
+- `per_page`: Default pagination size (search only)
+
+Action-specific settings override global. Publish with:
 ```bash
 php artisan vendor:publish --tag=fast-crud-config
 ```
 
 ## Key Patterns
 
-1. **External ID** - API uses `external_id` (UUID) field, not internal `id`
+1. **Configurable Find Field** - API uses `id` by default, configurable via `find_field` option
 2. **Hook Methods** - Override `beforeFill()`, `beforeSave()`, `afterSave()`, `modifyXxxQuery()` for customization
 3. **Trait Composition** - Actions are traits; include only what you need
 4. **JSend Responses** - Uses `AnswerTrait` from `dev-toolbelt/jsend-payload` for response formatting
@@ -78,9 +88,9 @@ php artisan vendor:publish --tag=fast-crud-config
 ## Model Requirements
 
 Models must have:
-- `external_id` field (UUID)
+- A unique identifier field (configured via `find_field`, default: `id`)
 - Standard Eloquent `fillable` property
-- `toSoftArray()` or `toArray()` methods
+- `toArray()` method (or custom method configured via `method` option)
 
 ## Code Standards
 

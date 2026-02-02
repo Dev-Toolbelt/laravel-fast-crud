@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Provides the read (GET by ID) action for CRUD controllers.
  *
- * Retrieves a single model instance by its external_id (UUID).
+ * Retrieves a single model instance by its identifier field (configurable).
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
@@ -23,22 +23,27 @@ use Psr\Http\Message\ResponseInterface;
 trait Read
 {
     /**
-     * Retrieves a single record by its external_id.
+     * Retrieves a single record by its identifier field.
      *
-     * @param string $id The external_id (UUID) of the record
+     * @param string $id The identifier value of the record
      * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with the record data or error response
      */
     public function read(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast_crud.read.method', 'toArray');
+        $findField = config('devToolbelt.fast_crud.read.find_field')
+            ?? config('devToolbelt.fast_crud.global.find_field', 'id');
 
-        if (!Str::isUuid($id)) {
+        $isUuid = config('devToolbelt.fast_crud.read.find_field_is_uuid')
+            ?? config('devToolbelt.fast_crud.global.find_field_is_uuid', false);
+
+        if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid();
         }
 
         $modelName = $this->modelClassName();
-        $query = $modelName::query()->where('external_id', $id);
+        $query = $modelName::query()->where($findField, $id);
         $this->modifyReadQuery($query);
 
         /** @var Model|null $record */

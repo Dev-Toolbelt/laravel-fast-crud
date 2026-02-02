@@ -32,15 +32,20 @@ trait Update
      * Updates an existing record with the request data.
      *
      * @param Request $request The HTTP request containing the updated data
-     * @param string $id The external_id (UUID) of the record to update
+     * @param string $id The identifier value of the record to update
      * @param string|null $method Model serialization method (default from config or 'toArray')
      * @return JsonResponse|ResponseInterface JSON response with the updated record or error response
      */
     public function update(Request $request, string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast_crud.update.method', 'toArray');
+        $findField = config('devToolbelt.fast_crud.update.find_field')
+            ?? config('devToolbelt.fast_crud.global.find_field', 'id');
 
-        if (!Str::isUuid($id)) {
+        $isUuid = config('devToolbelt.fast_crud.update.find_field_is_uuid')
+            ?? config('devToolbelt.fast_crud.global.find_field_is_uuid', false);
+
+        if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid();
         }
 
@@ -51,7 +56,7 @@ trait Update
         }
 
         $modelName = $this->modelClassName();
-        $query = $modelName::query()->where('external_id', $id);
+        $query = $modelName::query()->where($findField, $id);
         $this->modifyUpdateQuery($query);
 
         /** @var Model|null $record */
