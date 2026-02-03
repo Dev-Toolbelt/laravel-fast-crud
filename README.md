@@ -116,7 +116,9 @@ GET /products?sort=category,-price   # ASC category, DESC price
 ## Pagination
 
 ```
+GET /products?page=2                 # Go to page 2
 GET /products?perPage=20             # 20 items per page (default: 40)
+GET /products?page=3&perPage=10      # Page 3 with 10 items per page
 GET /products?skipPagination=true    # Return all records
 ```
 
