@@ -144,6 +144,6 @@ trait SoftDelete
      */
     protected function getSoftDeleteUserId(): int|string|null
     {
-        return auth()->id();
+        return auth()->user()?->getAuthIdentifier();
     }
 }
