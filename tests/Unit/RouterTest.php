@@ -6,29 +6,10 @@ namespace DevToolbelt\LaravelFastCrud\Tests\Unit;
 
 use DevToolbelt\LaravelFastCrud\Router;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
-use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
-use Mockery;
 
 final class RouterTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Create a mock for Route facade
-        $routeMock = Mockery::mock('alias:' . RouteFacade::class);
-
-        $routeInstanceMock = Mockery::mock(Route::class);
-        $routeInstanceMock->shouldReceive('middleware')->andReturnSelf();
-
-        $routeMock->shouldReceive('get')->andReturn($routeInstanceMock);
-        $routeMock->shouldReceive('post')->andReturn($routeInstanceMock);
-        $routeMock->shouldReceive('put')->andReturn($routeInstanceMock);
-        $routeMock->shouldReceive('patch')->andReturn($routeInstanceMock);
-        $routeMock->shouldReceive('delete')->andReturn($routeInstanceMock);
-    }
-
     public function testRouterExtendsRoute(): void
     {
         $this->assertTrue(is_subclass_of(Router::class, RouteFacade::class));

@@ -113,6 +113,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn(null);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
@@ -132,6 +133,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn($modelMock);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
@@ -151,6 +153,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn($modelMock);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
@@ -170,6 +173,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn($modelMock);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
@@ -189,6 +193,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn($modelMock);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
@@ -217,6 +222,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
         $builderMock->shouldReceive('first')->andReturn($modelMock);
 
         $modelClass = $this->createMockModelClass($builderMock, $modelMock);
