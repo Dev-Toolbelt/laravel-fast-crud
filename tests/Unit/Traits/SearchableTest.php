@@ -8,12 +8,13 @@ use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use DevToolbelt\LaravelFastCrud\Traits\Searchable;
 use Illuminate\Database\Eloquent\Builder;
 use Mockery;
+use Mockery\MockInterface;
 
 final class SearchableTest extends TestCase
 {
     use Searchable;
 
-    private Builder $queryMock;
+    private Builder&MockInterface $queryMock;
 
     protected function setUp(): void
     {
@@ -21,7 +22,7 @@ final class SearchableTest extends TestCase
         $this->queryMock = $this->createQueryMockWithConnection('pgsql');
     }
 
-    private function createQueryMockWithConnection(string $driver): Builder
+    private function createQueryMockWithConnection(string $driver): Builder&MockInterface
     {
         $connectionMock = Mockery::mock('Illuminate\Database\Connection');
         $connectionMock->shouldReceive('getDriverName')->andReturn($driver);
@@ -204,22 +205,48 @@ final class SearchableTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithGreaterThanOrNullOperator(): void
+    public function testProcessSearchWithGreaterThanOrNullOperatorExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('whereNull')
+            ->once()
+            ->with('stock')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('stock', '>', '10')
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('where')
             ->once()
-            ->with(Mockery::type('Closure'))
+            ->with(Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['stock' => ['gtn' => '10']]);
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithLesserThanOrNullOperator(): void
+    public function testProcessSearchWithLesserThanOrNullOperatorExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('whereNull')
+            ->once()
+            ->with('stock')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('stock', '<', '10')
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('where')
             ->once()
-            ->with(Mockery::type('Closure'))
+            ->with(Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['stock' => ['ltn' => '10']]);
@@ -276,44 +303,80 @@ final class SearchableTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithRelationLikeFilter(): void
+    public function testProcessSearchWithRelationLikeFilterExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'ILIKE', '%electronics%')
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('whereHas')
             ->once()
-            ->with('category', Mockery::type('Closure'))
+            ->with('category', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['category.name' => ['like' => 'electronics']]);
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithRelationInFilter(): void
+    public function testProcessSearchWithRelationInFilterExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('whereIn')
+            ->once()
+            ->with('id', ['1', '2', '3'])
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('whereHas')
             ->once()
-            ->with('category', Mockery::type('Closure'))
+            ->with('category', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['category.id' => ['in' => '1,2,3']]);
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithRelationSimpleEquality(): void
+    public function testProcessSearchWithRelationSimpleEqualityExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'Electronics')
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('whereHas')
             ->once()
-            ->with('category', Mockery::type('Closure'))
+            ->with('category', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['category.name' => 'Electronics']);
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithRelationBetweenFilter(): void
+    public function testProcessSearchWithRelationBetweenFilterExecutesClosure(): void
     {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('whereBetween')
+            ->once()
+            ->with('created_at', ['2024-01-01 00:00:00', '2024-12-31 23:59:59'])
+            ->andReturnSelf();
+
         $this->queryMock->shouldReceive('whereHas')
             ->once()
-            ->with('order', Mockery::type('Closure'))
+            ->with('order', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['order.created_at' => ['btw' => '2024-01-01,2024-12-31']]);
@@ -367,15 +430,167 @@ final class SearchableTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function testProcessSearchWithRelationLikeFilterUsesMysqlLike(): void
+    public function testProcessSearchWithRelationLikeFilterUsesMysqlLikeExecutesClosure(): void
     {
         $queryMock = $this->createQueryMockWithConnection('mysql');
+
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'LIKE', '%electronics%')
+            ->andReturnSelf();
+
         $queryMock->shouldReceive('whereHas')
             ->once()
-            ->with('category', Mockery::type('Closure'))
+            ->with('category', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
             ->andReturnSelf();
 
         $this->processSearch($queryMock, ['category.name' => ['like' => 'electronics']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithBooleanValue(): void
+    {
+        $this->queryMock->shouldReceive('where')
+            ->once()
+            ->with('is_active', true)
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['is_active' => true]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithBetweenOperatorMonthFormat(): void
+    {
+        $this->queryMock->shouldReceive('whereBetween')
+            ->once()
+            ->with('created_at', ['2024-01-01 00:00:00', '2024-03-31 23:59:59'])
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['created_at' => ['btw' => '2024-01,2024-03']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithBetweenOperatorSingleMonthFormat(): void
+    {
+        $this->queryMock->shouldReceive('whereBetween')
+            ->once()
+            ->with('created_at', ['2024-06-01 00:00:00', '2024-06-30 23:59:59'])
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['created_at' => ['btw' => '2024-06']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithThreeLevelRelationLikeFilterExecutesClosure(): void
+    {
+        $innerQueryMock2 = Mockery::mock(Builder::class);
+        $innerQueryMock2->shouldReceive('where')
+            ->once()
+            ->with('name', 'ILIKE', '%John%')
+            ->andReturnSelf();
+
+        $innerQueryMock1 = Mockery::mock(Builder::class);
+        $innerQueryMock1->shouldReceive('whereHas')
+            ->once()
+            ->with('customer', Mockery::on(function ($closure) use ($innerQueryMock2) {
+                $closure($innerQueryMock2);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('whereHas')
+            ->once()
+            ->with('order', Mockery::on(function ($closure) use ($innerQueryMock1) {
+                $closure($innerQueryMock1);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['order.customer.name' => ['like' => 'John']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithThreeLevelRelationSimpleEqualityExecutesClosure(): void
+    {
+        $innerQueryMock2 = Mockery::mock(Builder::class);
+        $innerQueryMock2->shouldReceive('where')
+            ->once()
+            ->with('email', 'john@example.com')
+            ->andReturnSelf();
+
+        $innerQueryMock1 = Mockery::mock(Builder::class);
+        $innerQueryMock1->shouldReceive('whereHas')
+            ->once()
+            ->with('customer', Mockery::on(function ($closure) use ($innerQueryMock2) {
+                $closure($innerQueryMock2);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('whereHas')
+            ->once()
+            ->with('order', Mockery::on(function ($closure) use ($innerQueryMock1) {
+                $closure($innerQueryMock1);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['order.customer.email' => 'john@example.com']);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithInOperatorMoreThanTwoLevelRelation(): void
+    {
+        $this->queryMock->shouldReceive('whereIn')
+            ->once()
+            ->with('order.customer.id', ['1', '2', '3'])
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['order.customer.id' => ['in' => '1,2,3']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithRelationSimpleEqualityConvertsIdToExternalIdExecutesClosure(): void
+    {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('external_id', 'abc-123')
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('whereHas')
+            ->once()
+            ->with('category', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['category.id' => 'abc-123']);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithBetweenRelationMonthFormatExecutesClosure(): void
+    {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('whereBetween')
+            ->once()
+            ->with('created_at', ['2024-01-01 00:00:00', '2024-03-31 23:59:59'])
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('whereHas')
+            ->once()
+            ->with('order', Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['order.created_at' => ['btw' => '2024-01,2024-03']]);
         $this->addToAssertionCount(1);
     }
 }

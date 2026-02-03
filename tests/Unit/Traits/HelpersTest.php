@@ -7,6 +7,9 @@ namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Traits;
 use DevToolbelt\LaravelFastCrud\Traits\Helpers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\MessageBag;
+use Illuminate\Validation\Validator as ValidatorInstance;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
@@ -45,12 +48,9 @@ final class HelpersTest extends TestCase
         };
     }
 
-    public function testRunValidationReturnsNullWhenRulesAreEmpty(): void
-    {
-        $result = $this->controller->callRunValidation(['name' => 'Test'], []);
-
-        $this->assertNull($result);
-    }
+    // =========================================================================
+    // hasModelAttribute Tests
+    // =========================================================================
 
     public function testHasModelAttributeReturnsTrueForFillableAttribute(): void
     {
@@ -162,5 +162,261 @@ final class HelpersTest extends TestCase
         $result = $this->controller->callHasModelAttribute($modelMock, 'any_field');
 
         $this->assertFalse($result);
+    }
+
+    // =========================================================================
+    // runValidation Tests
+    // =========================================================================
+
+    public function testRunValidationReturnsNullWhenRulesAreEmpty(): void
+    {
+        $result = $this->controller->callRunValidation(['name' => 'Test'], []);
+
+        $this->assertNull($result);
+    }
+
+    public function testRunValidationReturnsNullWhenValidationPasses(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(true);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->with(['name' => 'John'], ['name' => 'required'])
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['name' => 'John'],
+            ['name' => 'required']
+        );
+
+        $this->assertNull($result);
+    }
+
+    public function testRunValidationReturnsErrorResponseWhenValidationFails(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'email' => ['The email field is required.']
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'email' => ['Required' => []]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->with(['email' => ''], ['email' => 'required'])
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['email' => ''],
+            ['email' => 'required']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertSame(400, $result->getStatusCode());
+
+        $this->assertCount(1, $this->controller->failData);
+        $this->assertSame('email', $this->controller->failData[0]['field']);
+        $this->assertSame('required', $this->controller->failData[0]['error']);
+        $this->assertSame('', $this->controller->failData[0]['value']);
+        $this->assertSame('The email field is required.', $this->controller->failData[0]['message']);
+    }
+
+    public function testRunValidationHandlesMultipleFieldErrors(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'name' => ['The name field is required.'],
+            'email' => ['The email field is required.']
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'name' => ['Required' => []],
+            'email' => ['Required' => []]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            [],
+            ['name' => 'required', 'email' => 'required']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertCount(2, $this->controller->failData);
+
+        $this->assertSame('name', $this->controller->failData[0]['field']);
+        $this->assertSame('required', $this->controller->failData[0]['error']);
+
+        $this->assertSame('email', $this->controller->failData[1]['field']);
+        $this->assertSame('required', $this->controller->failData[1]['error']);
+    }
+
+    public function testRunValidationHandlesMultipleRulesPerField(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'email' => [
+                'The email field is required.',
+                'The email field must be a valid email address.'
+            ]
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'email' => [
+                'Required' => [],
+                'Email' => []
+            ]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['email' => ''],
+            ['email' => 'required|email']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertCount(2, $this->controller->failData);
+
+        $this->assertSame('email', $this->controller->failData[0]['field']);
+        $this->assertSame('required', $this->controller->failData[0]['error']);
+        $this->assertSame('The email field is required.', $this->controller->failData[0]['message']);
+
+        $this->assertSame('email', $this->controller->failData[1]['field']);
+        $this->assertSame('email', $this->controller->failData[1]['error']);
+        $this->assertSame('The email field must be a valid email address.', $this->controller->failData[1]['message']);
+    }
+
+    public function testRunValidationHandlesMissingFieldValue(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'name' => ['The name field is required.']
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'name' => ['Required' => []]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        // Field 'name' is not in data array
+        $result = $this->controller->callRunValidation(
+            [],
+            ['name' => 'required']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertNull($this->controller->failData[0]['value']);
+    }
+
+    public function testRunValidationHandlesMissingErrorMessage(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            // No messages for 'name' field
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'name' => ['Required' => []]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['name' => ''],
+            ['name' => 'required']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertNull($this->controller->failData[0]['message']);
+    }
+
+    public function testRunValidationIncludesSubmittedValue(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'age' => ['The age field must be an integer.']
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'age' => ['Integer' => []]
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['age' => 'not-a-number'],
+            ['age' => 'integer']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertSame('not-a-number', $this->controller->failData[0]['value']);
+    }
+
+    public function testRunValidationConvertsRuleNameToLowercase(): void
+    {
+        $messageBag = Mockery::mock(MessageBag::class);
+        $messageBag->shouldReceive('toArray')->andReturn([
+            'email' => ['The email must be valid.']
+        ]);
+
+        $validatorMock = Mockery::mock(ValidatorInstance::class);
+        $validatorMock->shouldReceive('passes')->once()->andReturn(false);
+        $validatorMock->shouldReceive('errors')->once()->andReturn($messageBag);
+        $validatorMock->shouldReceive('failed')->once()->andReturn([
+            'email' => ['EMAIL' => []] // Uppercase rule name
+        ]);
+
+        Validator::shouldReceive('make')
+            ->once()
+            ->andReturn($validatorMock);
+
+        $result = $this->controller->callRunValidation(
+            ['email' => 'invalid'],
+            ['email' => 'email']
+        );
+
+        $this->assertInstanceOf(JsonResponse::class, $result);
+        $this->assertSame('email', $this->controller->failData[0]['error']); // Should be lowercase
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }
