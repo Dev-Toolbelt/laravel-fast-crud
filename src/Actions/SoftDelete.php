@@ -60,7 +60,11 @@ trait SoftDelete
             return $this->answerColumnNotFound($deletedByField);
         }
 
-        $query = $modelName::query()->where($findField, $id);
+        $query = $modelName::query()
+            ->where($findField, $id)
+            ->whereNull($deletedAtField)
+            ->whereNull($deletedByField);
+
         $this->modifySoftDeleteQuery($query);
 
         /** @var Model|null $record */
