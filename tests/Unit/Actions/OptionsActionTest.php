@@ -162,7 +162,7 @@ final class OptionsActionTest extends TestCase
         $this->controller->options($request);
 
         $this->assertTrue($this->controller->answerColumnNotFoundCalled);
-        $this->assertSame('label', $this->controller->columnNotFoundField);
+        $this->assertSame('invalid_column', $this->controller->columnNotFoundField);
     }
 
     public function testModifyOptionsQueryHookIsCalled(): void

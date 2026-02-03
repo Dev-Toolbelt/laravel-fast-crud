@@ -18,7 +18,18 @@ final class SearchableTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->queryMock = Mockery::mock(Builder::class);
+        $this->queryMock = $this->createQueryMockWithConnection('pgsql');
+    }
+
+    private function createQueryMockWithConnection(string $driver): Builder
+    {
+        $connectionMock = Mockery::mock('Illuminate\Database\Connection');
+        $connectionMock->shouldReceive('getDriverName')->andReturn($driver);
+
+        $queryMock = Mockery::mock(Builder::class);
+        $queryMock->shouldReceive('getConnection')->andReturn($connectionMock);
+
+        return $queryMock;
     }
 
     public function testProcessSearchWithEmptyFilters(): void
@@ -317,6 +328,54 @@ final class SearchableTest extends TestCase
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['name' => ['like' => '  test  ']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithLikeOperatorUsesLikeForMysql(): void
+    {
+        $queryMock = $this->createQueryMockWithConnection('mysql');
+        $queryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'LIKE', '%samsung%')
+            ->andReturnSelf();
+
+        $this->processSearch($queryMock, ['name' => ['like' => 'samsung']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithLikeOperatorUsesIlikeForPgsql(): void
+    {
+        $queryMock = $this->createQueryMockWithConnection('pgsql');
+        $queryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'ILIKE', '%samsung%')
+            ->andReturnSelf();
+
+        $this->processSearch($queryMock, ['name' => ['like' => 'samsung']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithLikeOperatorUsesLikeForSqlite(): void
+    {
+        $queryMock = $this->createQueryMockWithConnection('sqlite');
+        $queryMock->shouldReceive('where')
+            ->once()
+            ->with('name', 'LIKE', '%samsung%')
+            ->andReturnSelf();
+
+        $this->processSearch($queryMock, ['name' => ['like' => 'samsung']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithRelationLikeFilterUsesMysqlLike(): void
+    {
+        $queryMock = $this->createQueryMockWithConnection('mysql');
+        $queryMock->shouldReceive('whereHas')
+            ->once()
+            ->with('category', Mockery::type('Closure'))
+            ->andReturnSelf();
+
+        $this->processSearch($queryMock, ['category.name' => ['like' => 'electronics']]);
         $this->addToAssertionCount(1);
     }
 }

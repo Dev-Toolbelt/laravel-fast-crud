@@ -55,11 +55,15 @@ trait Searchable
 
             if (is_array($param)) {
                 $this->applyOperatorFilters($query, $column, $param, $hasRelation);
-            } elseif (is_string($param)) {
-                $this->applySimpleEquality($query, $column, $param, $hasRelation);
-            } else {
-                $query->where($column, $param);
+                continue;
             }
+
+            if (is_string($param)) {
+                $this->applySimpleEquality($query, $column, $param, $hasRelation);
+                continue;
+            }
+
+            $query->where($column, $param);
         }
     }
 
@@ -136,6 +140,7 @@ trait Searchable
      * Applies case-insensitive LIKE filter with relation support.
      *
      * Supports up to 2 levels of nested relations.
+     * Uses ILIKE for PostgreSQL and LIKE for MySQL/other databases.
      *
      * @param Builder $query The query builder instance
      * @param string $column The column name (may include relation path)
@@ -144,13 +149,15 @@ trait Searchable
      */
     private function applyLikeFilter(Builder $query, string $column, string $value, bool $hasRelation): void
     {
+        $likeOperator = $this->getLikeOperator($query);
+
         if ($hasRelation) {
             $parts = explode('.', $column);
             if (count($parts) === 2) {
                 [$relation, $field] = $parts;
                 $query->whereHas(
                     Str::camel($relation),
-                    fn(Builder $q): Builder => $q->where($field, 'ILIKE', "%{$value}%")
+                    fn(Builder $q): Builder => $q->where($field, $likeOperator, "%{$value}%")
                 );
             } elseif (count($parts) === 3) {
                 [$relation1, $relation2, $field] = $parts;
@@ -158,14 +165,30 @@ trait Searchable
                     $relation1,
                     fn(Builder $q): Builder => $q->whereHas(
                         $relation2,
-                        fn(Builder $q2): Builder => $q2->where($field, 'ILIKE', "%{$value}%")
+                        fn(Builder $q2): Builder => $q2->where($field, $likeOperator, "%{$value}%")
                     )
                 );
             }
             return;
         }
 
-        $query->where($column, 'ILIKE', "%{$value}%");
+        $query->where($column, $likeOperator, "%{$value}%");
+    }
+
+    /**
+     * Gets the appropriate LIKE operator based on the database driver.
+     *
+     * Returns ILIKE for PostgreSQL (case-insensitive) and LIKE for other databases.
+     * MySQL LIKE is case-insensitive by default with standard collations.
+     *
+     * @param Builder $query The query builder instance
+     * @return string The LIKE operator to use
+     */
+    private function getLikeOperator(Builder $query): string
+    {
+        $driver = $query->getConnection()->getDriverName();
+
+        return $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
     }
 
     /**
