@@ -77,7 +77,7 @@ final class Router extends Route
             $verb = $action['verb'];
             $path = $uri . $action['path'];
             $method = $action['method'];
-            $permission = $action['permission'] ?? null;
+            $permission = $action['permission'];
 
             if (!method_exists($controllerName, $method)) {
                 continue;
@@ -87,13 +87,8 @@ final class Router extends Route
                 continue;
             }
 
-            $route = static::$verb($path, "{$controllerName}@{$method}");
-
-            if (!$permission) {
-                continue;
-            }
-
-            $route->middleware("can:{$moduleName}.access.{$permission}");
+            static::$verb($path, "{$controllerName}@{$method}")
+                ->middleware("can:{$moduleName}.access.{$permission}");
         }
     }
 

@@ -4,3 +4,18 @@ parameters:
     - src
   excludePaths:
     - vendor
+  treatPhpDocTypesAsCertain: false
+  ignoreErrors:
+    # Laravel Builder generic type - common in Laravel packages
+    - identifier: missingType.generics
+    # AnswerTrait from jsend-payload has default parameters
+    - '#Missing parameter .+ in call to method .+::answerSuccess\(\)#'
+    - '#Method .+::answerSuccess\(\) invoked with \d+ parameters?, \d+ required#'
+    # Laravel Connection interface vs concrete class
+    - '#Call to an undefined method Illuminate\\Database\\ConnectionInterface::getDriverName\(\)#'
+    # Anonymous function return type with Builder
+    - '#Anonymous function should return Illuminate\\Database\\Eloquent\\Builder but returns Illuminate\\Database\\Query\\Builder#'
+    # Query Builder type covariance in Laravel
+    - '#expects Illuminate\\Database\\Eloquent\\Builder, Illuminate\\Database\\Query\\Builder given#'
+    # Auth facade magic method - auth() returns Factory but proxies to Guard via __call
+    - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::user\(\)#'

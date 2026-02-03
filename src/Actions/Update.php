@@ -30,7 +30,8 @@ use Psr\Http\Message\ResponseInterface;
  * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
- * @method JsonResponse|ResponseInterface runValidation(array $data, array $rules) Validates data and returns error response if fails
+ * @method JsonResponse|ResponseInterface|null runValidation(array $data, array $rules)
+ *         Validates data and returns error response if fails, null if passes
  */
 trait Update
 {

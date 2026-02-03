@@ -24,8 +24,10 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error
- * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta, HttpStatusCode $code) Returns success response
- * @method JsonResponse|ResponseInterface runValidation(array $data, array $rules) Validates data and returns error response if fails
+ * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta, HttpStatusCode $code)
+ *         Returns success response
+ * @method JsonResponse|ResponseInterface|null runValidation(array $data, array $rules)
+ *         Validates data and returns error response if fails, null if passes
  */
 trait Create
 {
