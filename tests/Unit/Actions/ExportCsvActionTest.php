@@ -12,12 +12,7 @@ use Illuminate\Http\Request;
 use Mockery;
 use Mockery\MockInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-
-enum TestStatus: string
-{
-    case ACTIVE = 'active';
-    case INACTIVE = 'inactive';
-}
+use DevToolbelt\LaravelFastCrud\Tests\Unit\Actions\Fixtures\TestStatus;
 
 final class ExportCsvActionTest extends TestCase
 {
