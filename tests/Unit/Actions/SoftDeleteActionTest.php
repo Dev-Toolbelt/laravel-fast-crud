@@ -124,6 +124,42 @@ final class SoftDeleteActionTest extends TestCase
         $this->assertTrue($this->controller->answerRecordNotFoundCalled);
     }
 
+    public function testSoftDeleteReturnsColumnNotFoundWhenDeletedAtIsMissing(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.deleted_at_field' => 'deleted_at_missing',
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $builderMock = Mockery::mock(Builder::class);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->controller->softDelete('1');
+
+        $this->assertTrue($this->controller->answerColumnNotFoundCalled);
+        $this->assertSame('deleted_at_missing', $this->controller->columnNotFoundField);
+    }
+
+    public function testSoftDeleteReturnsColumnNotFoundWhenDeletedByIsMissing(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.deleted_by_field' => 'deleted_by_missing',
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $builderMock = Mockery::mock(Builder::class);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->controller->softDelete('1');
+
+        $this->assertTrue($this->controller->answerColumnNotFoundCalled);
+        $this->assertSame('deleted_by_missing', $this->controller->columnNotFoundField);
+    }
+
     public function testModifySoftDeleteQueryHookIsCalled(): void
     {
         $this->mockConfig();

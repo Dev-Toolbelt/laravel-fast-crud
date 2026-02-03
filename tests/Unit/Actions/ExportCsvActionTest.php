@@ -354,6 +354,34 @@ final class ExportCsvActionTest extends TestCase
         $this->assertStringContainsString('1,', $lines[1]);
     }
 
+    public function testExportCsvHandlesMissingNestedKeyInArray(): void
+    {
+        $data = [
+            ['id' => 1, 'category' => []],
+        ];
+        $columns = [
+            'id' => 'ID',
+            'category.name' => 'Category',
+        ];
+
+        $this->controller = $this->createController($data, $columns);
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = $this->createRequestMock();
+
+        $response = $this->controller->exportCsv($request);
+
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
+
+        $lines = explode("\n", trim($content));
+        $this->assertCount(2, $lines);
+        $this->assertSame('1,', $lines[1]);
+    }
+
     public function testExportCsvHandlesBackedEnum(): void
     {
         $data = [
