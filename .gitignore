@@ -6,3 +6,9 @@
 /.phpunit.result.cache
 composer.phar
 .idea
+
+# Coverage reports
+coverage.xml
+coverage-report/
+.phpunit.cache/
+build/

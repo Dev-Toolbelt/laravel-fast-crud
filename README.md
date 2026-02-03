@@ -1,5 +1,12 @@
 # Laravel Fast CRUD
 
+[![CI](https://github.com/dev-toolbelt/laravel-fast-crud/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-toolbelt/laravel-fast-crud/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/dev-toolbelt/laravel-fast-crud/branch/main/graph/badge.svg)](https://codecov.io/gh/dev-toolbelt/laravel-fast-crud)
+[![Latest Stable Version](https://poser.pugx.org/dev-toolbelt/laravel-fast-crud/v/stable)](https://packagist.org/packages/dev-toolbelt/laravel-fast-crud)
+[![Total Downloads](https://poser.pugx.org/dev-toolbelt/laravel-fast-crud/downloads)](https://packagist.org/packages/dev-toolbelt/laravel-fast-crud)
+[![License](https://poser.pugx.org/dev-toolbelt/laravel-fast-crud/license)](https://packagist.org/packages/dev-toolbelt/laravel-fast-crud)
+[![PHP Version](https://img.shields.io/packagist/php-v/dev-toolbelt/laravel-fast-crud)](https://packagist.org/packages/dev-toolbelt/laravel-fast-crud)
+
 A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTful APIs in minutes with minimal boilerplate, following best practices and the [JSend specification](https://github.com/omniti-labs/jsend).
 
 ## Features
@@ -389,6 +396,43 @@ Detailed documentation for each component:
 - [Search Action](docs/search.md)
 - [Options Action](docs/options.md)
 - [Export CSV Action](docs/export-csv.md)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dev-toolbelt/laravel-fast-crud.git
+cd laravel-fast-crud
+
+# Install dependencies
+composer install
+
+# Run tests
+composer test
+
+# Run tests with coverage (requires PCOV or Xdebug)
+composer test:coverage
+
+# Check code style
+composer phpcs
+
+# Fix code style
+composer phpcs:fix
+
+# Run static analysis
+composer phpstan
+```
+
+### Code Quality
+
+- **Tests:** PHPUnit with 166+ unit tests
+- **Coverage Report:** [View on GitHub Pages](https://dev-toolbelt.github.io/laravel-fast-crud/)
+- **Code Style:** PSR-12 (PHP CodeSniffer)
+- **Static Analysis:** PHPStan Level 6
 
 ## License
 
