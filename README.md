@@ -24,7 +24,7 @@ A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTfu
 
 ## Requirements
 
-- PHP ^8.1
+- PHP ^8.2
 - Laravel ^11.0
 
 ## Installation
