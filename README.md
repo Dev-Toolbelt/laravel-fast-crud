@@ -427,12 +427,30 @@ composer phpcs:fix
 composer phpstan
 ```
 
-### Code Quality
+### Code Quality Requirements
 
-- **Tests:** PHPUnit with 166+ unit tests
-- **Coverage Report:** [View on GitHub Pages](https://dev-toolbelt.github.io/laravel-fast-crud/)
-- **Code Style:** PSR-12 (PHP CodeSniffer)
-- **Static Analysis:** PHPStan Level 6
+| Check | Tool | Requirement |
+|-------|------|-------------|
+| Tests | PHPUnit | All tests must pass |
+| Coverage | PCOV | Minimum **85%** coverage |
+| Code Style | PHP CodeSniffer | PSR-12 compliant |
+| Static Analysis | PHPStan | Level 6, no errors |
+
+### Pull Request Guidelines
+
+Before submitting a PR, ensure:
+
+1. **All tests pass:** `composer test`
+2. **Coverage is at least 85%:** `composer test:coverage`
+3. **Code style is correct:** `composer phpcs`
+4. **No static analysis errors:** `composer phpstan`
+
+> **Important:** Pull requests with coverage below 85% will be automatically blocked by CI.
+
+### Coverage Report
+
+- **Dashboard:** [Codecov](https://codecov.io/gh/dev-toolbelt/laravel-fast-crud)
+- **HTML Report:** [GitHub Pages](https://dev-toolbelt.github.io/laravel-fast-crud/)
 
 ## License
 

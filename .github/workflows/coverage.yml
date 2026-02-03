@@ -15,6 +15,9 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  MIN_COVERAGE: 85
+
 jobs:
   coverage:
     name: Generate Coverage
@@ -61,6 +64,27 @@ jobs:
             --configuration tests/phpunit-coverage.xml \
             --log-junit build/junit.xml
 
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(php -r "
+            \$xml = simplexml_load_file('coverage.xml');
+            \$metrics = \$xml->project->metrics;
+            \$statements = (int) \$metrics['statements'];
+            \$coveredStatements = (int) \$metrics['coveredstatements'];
+            if (\$statements > 0) {
+              echo round((\$coveredStatements / \$statements) * 100, 2);
+            } else {
+              echo '0';
+            }
+          ")
+          echo "Current coverage: ${COVERAGE}%"
+          echo "Minimum required: ${MIN_COVERAGE}%"
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "::error::Coverage ${COVERAGE}% is below minimum required ${MIN_COVERAGE}%"
+            exit 1
+          fi
+          echo "::notice::Coverage ${COVERAGE}% meets minimum requirement of ${MIN_COVERAGE}%"
+
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -79,7 +103,7 @@ jobs:
           files: ./coverage.xml
           flags: unittests
           name: codecov-laravel-fast-crud
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           verbose: true
 
       - name: Upload coverage report artifact

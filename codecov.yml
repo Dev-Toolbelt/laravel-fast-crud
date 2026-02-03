@@ -4,19 +4,21 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "85...100"
 
   status:
     project:
       default:
-        target: auto
+        target: 85%
         threshold: 1%
         informational: false
+        # This will fail the PR if coverage drops below 85%
     patch:
       default:
-        target: auto
+        target: 85%
         threshold: 1%
         informational: false
+        # New code must have at least 85% coverage
 
 parsers:
   gcov:
