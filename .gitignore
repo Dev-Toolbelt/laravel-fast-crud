@@ -1,6 +1,5 @@
 /vendor/
 /.php_cs.cache
-/composer.lock
 /tests/.phpunit.cache/
 /tests/coverage/
 /.phpunit.result.cache
@@ -8,7 +7,7 @@ composer.phar
 .idea
 
 # Coverage reports
-coverage.xml
-coverage-report/
+tests/coverage.xml
+tests/coverage-report/
 .phpunit.cache/
 build/

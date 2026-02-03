@@ -30,6 +30,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/composer.lock
 
       - name: Setup PHP with PCOV
         uses: shivammathur/setup-php@v2
@@ -71,7 +76,7 @@ jobs:
       - name: Check coverage threshold
         run: |
           COVERAGE=$(php -r "
-            \$xml = simplexml_load_file('coverage.xml');
+            \$xml = simplexml_load_file('tests/coverage.xml');
             \$metrics = \$xml->project->metrics;
             \$statements = (int) \$metrics['statements'];
             \$coveredStatements = (int) \$metrics['coveredstatements'];
@@ -95,7 +100,7 @@ jobs:
         with:
           name: test-results
           path: |
-            coverage.xml
+            tests/coverage.xml
             build/junit.xml
           if-no-files-found: warn
           retention-days: 7
@@ -105,7 +110,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ env.CODECOV_TOKEN }}
-          files: ./coverage.xml
+          files: ./tests/coverage.xml
           flags: unittests
           name: codecov-laravel-fast-crud
           fail_ci_if_error: true
@@ -119,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage-report/
+          path: tests/coverage-report/
           retention-days: 30
 
   deploy-pages:
@@ -137,7 +142,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
-          path: coverage-report
+          path: tests/coverage-report
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -145,7 +150,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: coverage-report
+          path: tests/coverage-report
 
       - name: Deploy to GitHub Pages
         id: deployment
