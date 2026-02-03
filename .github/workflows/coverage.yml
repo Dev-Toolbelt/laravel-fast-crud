@@ -100,6 +100,7 @@ jobs:
           retention-days: 7
 
       - name: Upload coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -108,6 +109,10 @@ jobs:
           name: codecov-laravel-fast-crud
           fail_ci_if_error: true
           verbose: true
+
+      - name: Skip Codecov upload (missing token)
+        if: ${{ secrets.CODECOV_TOKEN == '' }}
+        run: echo "Skipping Codecov upload because CODECOV_TOKEN is not set."
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
