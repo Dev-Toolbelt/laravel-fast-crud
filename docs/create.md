@@ -172,7 +172,7 @@ protected function beforeCreate(array &$data): void
     $data['status'] = $data['status'] ?? 'pending';
 
     // Custom validation
-    if (Product::where('sku', $data['sku'])->exists()) {
+    if (Product::query()->where('sku', $data['sku'])->exists()) {
         throw new ValidationException('SKU already exists');
     }
 }
@@ -285,7 +285,7 @@ class ProductController extends CrudController
 {
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 
     protected function createValidateRules(): array

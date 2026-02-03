@@ -59,7 +59,7 @@ protected function beforeRestore(Model $record): void
     }
 
     // Check if a record with same unique field exists
-    $exists = Product::where('sku', $record->sku)
+    $exists = Product::query()->where('sku', $record->sku)
         ->whereNull('deleted_at')
         ->exists();
 
@@ -205,7 +205,7 @@ class ProductController extends CrudController
 {
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 
     protected function modifyRestoreQuery(Builder $query): void
@@ -220,7 +220,7 @@ class ProductController extends CrudController
     protected function beforeRestore(Model $record): void
     {
         // Check for SKU conflicts
-        $conflict = Product::where('sku', $record->sku)
+        $conflict = Product::query()->where('sku', $record->sku)
             ->whereNull('deleted_at')
             ->where('id', '!=', $record->id)
             ->first();
@@ -289,7 +289,7 @@ Consider adding a scheduled task to permanently delete old soft deleted records:
 ```php
 // In app/Console/Kernel.php
 $schedule->call(function () {
-    Product::query()
+    Product::query()->query()
         ->whereNotNull('deleted_at')
         ->where('deleted_at', '<', now()->subDays(90))
         ->forceDelete();

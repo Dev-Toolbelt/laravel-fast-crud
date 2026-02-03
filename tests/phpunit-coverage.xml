@@ -9,7 +9,7 @@
      beStrictAboutOutputDuringTests="false"
      failOnRisky="false"
      failOnWarning="false"
-     executionOrder="random"
+     executionOrder="defects"
      cacheResult="false"
      displayDetailsOnTestsThatTriggerWarnings="false"
      displayDetailsOnTestsThatTriggerDeprecations="false"
@@ -33,6 +33,9 @@
     <testsuites>
         <testsuite name="unit">
             <directory>Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>Integration</directory>
         </testsuite>
     </testsuites>
 

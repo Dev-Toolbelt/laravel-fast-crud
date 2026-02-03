@@ -55,7 +55,7 @@ class ProductController extends CrudController
 {
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 }
 ```
@@ -152,7 +152,7 @@ class ProductController extends CrudController
 {
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 
     // Add data before filling the model

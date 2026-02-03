@@ -180,7 +180,7 @@ class ProductController extends CrudController
 {
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 
     protected function modifyReadQuery(Builder $query): void

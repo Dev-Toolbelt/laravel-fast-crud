@@ -198,7 +198,7 @@ class MinimalController extends CrudController
 
     protected function modelClassName(): string
     {
-        return Product::class;
+        return Product::query()->class;
     }
 }
 

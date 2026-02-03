@@ -37,7 +37,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
  * {
  *     protected function modelClassName(): string
  *     {
- *         return Product::class;
+ *         return Product::query()->class;
  *     }
  *
  *     protected function createValidateRules(): array
