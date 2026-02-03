@@ -6,6 +6,11 @@ namespace DevToolbelt\LaravelFastCrud\Tests\Unit;
 
 use DevToolbelt\LaravelFastCrud\Router;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
+use DevToolbelt\LaravelFastCrud\Tests\Unit\Fixtures\RouterTestController;
+use Illuminate\Container\Container;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Routing\Router as IlluminateRouter;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Route as RouteFacade;
 
 final class RouterTest extends TestCase
@@ -136,5 +141,27 @@ final class RouterTest extends TestCase
         $this->assertContains('/{id:uuid}', $pathsByMethod['delete']);
         $this->assertContains('/{id:uuid}/soft', $pathsByMethod['softDelete']);
         $this->assertContains('/{id:uuid}/restore', $pathsByMethod['restore']);
+    }
+
+    public function testCrudSkipsMissingControllerMethods(): void
+    {
+        $previousApp = Facade::getFacadeApplication();
+
+        $container = new Container();
+        $container->instance('app', $container);
+        $container->instance('router', new IlluminateRouter(new Dispatcher($container), $container));
+        Facade::setFacadeApplication($container);
+
+        Router::crud('items', RouterTestController::class, 'items');
+
+        $routes = RouteFacade::getRoutes()->getRoutes();
+        $actions = array_map(static fn ($route): string => $route->getActionName(), $routes);
+
+        $this->assertContains(RouterTestController::class . '@search', $actions);
+        $this->assertNotContains(RouterTestController::class . '@options', $actions);
+        $this->assertNotContains(RouterTestController::class . '@create', $actions);
+        $this->assertNotContains(RouterTestController::class . '@exportCsv', $actions);
+
+        Facade::setFacadeApplication($previousApp);
     }
 }
