@@ -69,16 +69,23 @@ final class UpdateActionTest extends TestCase
                 $this->afterUpdateRecord = $record;
             }
 
-            protected function answerInvalidUuid(): JsonResponse|ResponseInterface
-            {
+            public ?HttpStatusCode $invalidUuidStatusCode = null;
+            public ?HttpStatusCode $emptyPayloadStatusCode = null;
+
+            protected function answerInvalidUuid(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerInvalidUuidCalled = true;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->invalidUuidStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
-            protected function answerEmptyPayload(): JsonResponse|ResponseInterface
-            {
+            protected function answerEmptyPayload(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerEmptyPayloadCalled = true;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->emptyPayloadStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
             protected function answerRecordNotFound(): JsonResponse|ResponseInterface
@@ -615,9 +622,7 @@ final class UpdateActionTest extends TestCase
 
     public function testUpdateUsesDefaultHttpStatusWhenNotConfigured(): void
     {
-        $this->mockConfig([
-            'devToolbelt.fast-crud.update.http_status' => null,
-        ]);
+        $this->mockConfig([]);
 
         $modelMock = Mockery::mock(Model::class);
         $modelMock->shouldReceive('update')->andReturn(true);
@@ -637,6 +642,69 @@ final class UpdateActionTest extends TestCase
 
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
+    }
+
+    public function testUpdateEmptyPayloadUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([]);
+
+        $response = $this->controller->update($request, '1');
+
+        $this->assertTrue($this->controller->answerEmptyPayloadCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->emptyPayloadStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testUpdateEmptyPayloadUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([]);
+
+        $response = $this->controller->update($request, '1');
+
+        $this->assertTrue($this->controller->answerEmptyPayloadCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->emptyPayloadStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
+    public function testUpdateInvalidUuidUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.update.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Test']);
+
+        $response = $this->controller->update($request, 'not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testUpdateInvalidUuidUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.update.find_field_is_uuid' => true,
+        ]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Test']);
+
+        $response = $this->controller->update($request, 'not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
     }
 
     private function createMockModelClass(Builder $builderMock): string
@@ -683,7 +751,15 @@ final class UpdateActionTest extends TestCase
                         $config = $key; // Replace instead of merge
                         return null;
                     }
-                    return array_key_exists($key, $config) ? $config[$key] : $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }

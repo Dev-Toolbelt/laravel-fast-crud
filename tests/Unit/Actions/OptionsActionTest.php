@@ -29,8 +29,10 @@ final class OptionsActionTest extends TestCase
             public ?Builder $modifiedQuery = null;
             public array $afterOptionsData = [];
             public bool $answerRequiredCalled = false;
+            public ?HttpStatusCode $requiredStatusCode = null;
             public string $requiredField = '';
             public bool $answerColumnNotFoundCalled = false;
+            public ?HttpStatusCode $columnNotFoundStatusCode = null;
             public string $columnNotFoundField = '';
             public bool $answerSuccessCalled = false;
             public array $responseData = [];
@@ -61,18 +63,24 @@ final class OptionsActionTest extends TestCase
                 return in_array($attributeName, ['name', 'title', 'external_id', 'id']);
             }
 
-            protected function answerRequired(string $field): JsonResponse|ResponseInterface
-            {
+            protected function answerRequired(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerRequiredCalled = true;
                 $this->requiredField = $field;
-                return new JsonResponse(['status' => 'fail', 'message' => "$field is required"], 400);
+                $this->requiredStatusCode = $code;
+                return new JsonResponse(['status' => 'fail', 'message' => "$field is required"], $code->value);
             }
 
-            protected function answerColumnNotFound(string $field): JsonResponse|ResponseInterface
-            {
+            protected function answerColumnNotFound(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerColumnNotFoundCalled = true;
                 $this->columnNotFoundField = $field;
-                return new JsonResponse(['status' => 'fail', 'message' => "Column $field not found"], 400);
+                $this->columnNotFoundStatusCode = $code;
+                return new JsonResponse(['status' => 'fail', 'message' => "Column $field not found"], $code->value);
             }
 
             protected function answerSuccess(
@@ -270,6 +278,38 @@ final class OptionsActionTest extends TestCase
         $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
+    public function testOptionsRequiredUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn(null);
+
+        $response = $this->controller->options($request);
+
+        $this->assertTrue($this->controller->answerRequiredCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->requiredStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testOptionsRequiredUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn(null);
+
+        $response = $this->controller->options($request);
+
+        $this->assertTrue($this->controller->answerRequiredCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->requiredStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
     private function createModelMock(): Model
     {
         $modelMock = Mockery::mock(Model::class);
@@ -360,10 +400,18 @@ final class OptionsActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key;
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }

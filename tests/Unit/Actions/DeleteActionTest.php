@@ -28,6 +28,7 @@ final class DeleteActionTest extends TestCase
             public ?Model $beforeDeleteRecord = null;
             public ?Model $afterDeleteRecord = null;
             public bool $answerInvalidUuidCalled = false;
+            public ?HttpStatusCode $invalidUuidStatusCode = null;
             public bool $answerRecordNotFoundCalled = false;
             public bool $answerNoContentCalled = false;
             public string $modelClass = '';
@@ -57,10 +58,12 @@ final class DeleteActionTest extends TestCase
                 $this->afterDeleteRecord = $record;
             }
 
-            protected function answerInvalidUuid(): JsonResponse|ResponseInterface
-            {
+            protected function answerInvalidUuid(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerInvalidUuidCalled = true;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->invalidUuidStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
             protected function answerRecordNotFound(): JsonResponse|ResponseInterface
@@ -242,6 +245,33 @@ final class DeleteActionTest extends TestCase
         $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
+    public function testDeleteInvalidUuidUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.delete.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $response = $this->controller->delete('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testDeleteInvalidUuidUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.delete.find_field_is_uuid' => true,
+        ]);
+
+        $response = $this->controller->delete('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
     private function createMockModelClass(Builder $builderMock): string
     {
         $className = 'TestDeleteModel' . uniqid();
@@ -282,10 +312,18 @@ final class DeleteActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key;
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }

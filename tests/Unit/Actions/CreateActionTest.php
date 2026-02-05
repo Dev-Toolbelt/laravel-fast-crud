@@ -62,10 +62,14 @@ final class CreateActionTest extends TestCase
                 $this->afterCreateRecord = $record;
             }
 
-            protected function answerEmptyPayload(): JsonResponse|ResponseInterface
-            {
+            public ?HttpStatusCode $emptyPayloadStatusCode = null;
+
+            protected function answerEmptyPayload(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerEmptyPayloadCalled = true;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->emptyPayloadStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
             protected function answerSuccess(
@@ -438,6 +442,36 @@ final class CreateActionTest extends TestCase
         $this->assertSame(HttpStatusCode::CREATED->value, $response->getStatusCode());
     }
 
+    public function testCreateEmptyPayloadUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([]);
+
+        $response = $this->controller->create($request);
+
+        $this->assertTrue($this->controller->answerEmptyPayloadCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->emptyPayloadStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testCreateEmptyPayloadUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([]);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn([]);
+
+        $response = $this->controller->create($request);
+
+        $this->assertTrue($this->controller->answerEmptyPayloadCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->emptyPayloadStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
     private function setupModelMock(): Model
     {
         $modelMock = Mockery::mock(Model::class);
@@ -489,10 +523,18 @@ final class CreateActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key;
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }

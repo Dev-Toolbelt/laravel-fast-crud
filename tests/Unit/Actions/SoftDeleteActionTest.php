@@ -28,8 +28,10 @@ final class SoftDeleteActionTest extends TestCase
             public ?Model $beforeSoftDeleteRecord = null;
             public ?Model $afterSoftDeleteRecord = null;
             public bool $answerInvalidUuidCalled = false;
+            public ?HttpStatusCode $invalidUuidStatusCode = null;
             public bool $answerRecordNotFoundCalled = false;
             public bool $answerColumnNotFoundCalled = false;
+            public ?HttpStatusCode $columnNotFoundStatusCode = null;
             public string $columnNotFoundField = '';
             public bool $answerNoContentCalled = false;
             public string $modelClass = '';
@@ -70,10 +72,12 @@ final class SoftDeleteActionTest extends TestCase
                 return in_array($attributeName, ['deleted_at', 'deleted_by']);
             }
 
-            protected function answerInvalidUuid(): JsonResponse|ResponseInterface
-            {
+            protected function answerInvalidUuid(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerInvalidUuidCalled = true;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->invalidUuidStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
             protected function answerRecordNotFound(): JsonResponse|ResponseInterface
@@ -82,11 +86,14 @@ final class SoftDeleteActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 404);
             }
 
-            protected function answerColumnNotFound(string $field): JsonResponse|ResponseInterface
-            {
+            protected function answerColumnNotFound(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerColumnNotFoundCalled = true;
                 $this->columnNotFoundField = $field;
-                return new JsonResponse(['status' => 'fail'], 400);
+                $this->columnNotFoundStatusCode = $code;
+                return new JsonResponse(['status' => 'fail'], $code->value);
             }
 
             protected function answerNoContent(
@@ -326,6 +333,72 @@ final class SoftDeleteActionTest extends TestCase
         $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
+    public function testSoftDeleteInvalidUuidUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $response = $this->controller->softDelete('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testSoftDeleteInvalidUuidUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.find_field_is_uuid' => true,
+        ]);
+
+        $response = $this->controller->softDelete('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
+    public function testSoftDeleteColumnNotFoundUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.deleted_at_field' => 'deleted_at_missing',
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $builderMock = Mockery::mock(Builder::class);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->softDelete('1');
+
+        $this->assertTrue($this->controller->answerColumnNotFoundCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->columnNotFoundStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testSoftDeleteColumnNotFoundUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.deleted_at_field' => 'deleted_at_missing',
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $builderMock = Mockery::mock(Builder::class);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->softDelete('1');
+
+        $this->assertTrue($this->controller->answerColumnNotFoundCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->columnNotFoundStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
     private function createModelMockWithAttributes(): Model
     {
         $modelMock = Mockery::mock(Model::class);
@@ -406,10 +479,18 @@ final class SoftDeleteActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key;
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }

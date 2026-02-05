@@ -27,6 +27,7 @@ final class ReadActionTest extends TestCase
             public ?Builder $modifiedQuery = null;
             public ?Model $afterReadRecord = null;
             public bool $answerInvalidUuidCalled = false;
+            public ?HttpStatusCode $invalidUuidStatusCode = null;
             public bool $answerRecordNotFoundCalled = false;
             public bool $answerSuccessCalled = false;
             public string $modelClass = '';
@@ -51,10 +52,12 @@ final class ReadActionTest extends TestCase
                 $this->afterReadRecord = $record;
             }
 
-            protected function answerInvalidUuid(): JsonResponse|ResponseInterface
-            {
+            protected function answerInvalidUuid(
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
                 $this->answerInvalidUuidCalled = true;
-                return new JsonResponse(['status' => 'fail', 'message' => 'Invalid UUID'], 400);
+                $this->invalidUuidStatusCode = $code;
+                return new JsonResponse(['status' => 'fail', 'message' => 'Invalid UUID'], $code->value);
             }
 
             protected function answerRecordNotFound(): JsonResponse|ResponseInterface
@@ -240,6 +243,41 @@ final class ReadActionTest extends TestCase
         $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
+    public function testReadInvalidUuidUsesValidationHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
+        ]);
+
+        $response = $this->controller->read('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::UNPROCESSABLE_ENTITY->value, $response->getStatusCode());
+    }
+
+    public function testReadInvalidUuidUsesDefaultValidationHttpStatus(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => true,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
+        ]);
+
+        $response = $this->controller->read('not-a-uuid');
+
+        $this->assertTrue($this->controller->answerInvalidUuidCalled);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->invalidUuidStatusCode);
+        $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
     private function createMockModelClass(Builder $builderMock): string
     {
         $className = 'TestReadModel' . uniqid();
@@ -274,10 +312,18 @@ final class ReadActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key;
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    // If Laravel is available, always use its config (for integration tests)
+                    if (function_exists("app") && \app()->bound("config")) {
+                        return \config($key, $default);
+                    }
+                    // Otherwise use local config (for unit tests)
+                    if (array_key_exists($key, $config)) {
+                        return $config[$key];
+                    }
+                    return $default;
                 }
             ');
         }
