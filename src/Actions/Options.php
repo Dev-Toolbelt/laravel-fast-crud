@@ -22,8 +22,8 @@ use Psr\Http\Message\ResponseInterface;
  * - value (optional) - The column name to use as the value (default: external_id)
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerRequired(string $field, HttpStatusCode $code) Returns required field error response
- * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Returns column not found error response
+ * @method JsonResponse|ResponseInterface answerRequired(string $field, HttpStatusCode $code) Required field error
+ * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  */
 trait Options

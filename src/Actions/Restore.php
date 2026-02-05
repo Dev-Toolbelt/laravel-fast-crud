@@ -21,7 +21,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method bool hasModelAttribute(Model $model, string $attributeName) Checks if model has attribute
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
- * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Returns column not found error response
+ * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  */
 trait Restore
