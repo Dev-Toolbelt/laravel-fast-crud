@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +42,10 @@ trait Options
      */
     public function options(Request $request): JsonResponse|ResponseInterface
     {
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.options.http_status', HttpStatusCode::OK->value)
+        );
+
         $defaultValue = config('devToolbelt.fast-crud.options.default_value', 'id');
         $value = $request->get('value', $defaultValue);
         $label = $request->get('label');
@@ -73,7 +78,7 @@ trait Options
 
         $this->afterOptions($rows);
 
-        return $this->answerSuccess($rows);
+        return $this->answerSuccess(data: $rows, code: $httpStatus);
     }
 
     /**

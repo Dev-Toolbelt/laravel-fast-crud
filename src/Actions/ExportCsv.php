@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
 use BackedEnum;
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Traits\Limitable;
 use DevToolbelt\LaravelFastCrud\Traits\Pageable;
 use DevToolbelt\LaravelFastCrud\Traits\Searchable;
@@ -81,6 +82,7 @@ trait ExportCsv
     public function exportCsv(Request $request, ?string $method = null): StreamedResponse
     {
         $method = $method ?? config('devToolbelt.fast-crud.export_csv.method', 'toArray');
+        $httpStatus = config('devToolbelt.fast-crud.export_csv.http_status', HttpStatusCode::OK->value);
         $modelName = $this->modelClassName();
         $query = $modelName::query();
         $isAssociative = array_keys($this->csvColumns) !== range(0, count($this->csvColumns) - 1);
@@ -92,36 +94,58 @@ trait ExportCsv
         $this->processSort($query, $request->input('sort', ''));
         $this->buildPagination($query, (int) $request->input('perPage', 9_999_999), $method);
 
-        return Response::stream(function () use ($columnPaths): void {
-            $handle = fopen('php://output', 'w');
+        $csvContent = $this->generateCsvContent($columnPaths);
 
-            if (!empty($this->csvColumns)) {
-                $headers = array_values($this->csvColumns);
-                $this->writeCsvLine($handle, $headers);
-            }
-
-            foreach ($this->data as $row) {
-                $csvRow = [];
-                foreach ($columnPaths as $columnPath) {
-                    $value = $this->getNestedValue($row, $columnPath);
-
-                    if ($value instanceof BackedEnum) {
-                        $value = $value->value;
-                    }
-
-                    $csvRow[] = $value;
-                }
-                $this->writeCsvLine($handle, $csvRow);
-            }
-
-            fclose($handle);
-        }, 200, [
+        return Response::stream(function () use ($csvContent): void {
+            echo $csvContent;
+        }, $httpStatus, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . date('Y-m-d_H-i-s_') . $this->csvFileName . '"',
-            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
-            'Last-Modified' => gmdate('D, d M Y H:i:s') . ' GMT',
+            'Content-Length' => strlen($csvContent),
             'Content-Transfer-Encoding' => 'binary',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+            'Last-Modified' => gmdate('D, d M Y H:i:s') . ' GMT',
+            'X-Content-Type-Options' => 'nosniff',
+            'Accept-Ranges' => 'none',
         ]);
+    }
+
+    /**
+     * Generates the CSV content as a string.
+     *
+     * @param array<int, string> $columnPaths The column paths to export
+     * @return string The complete CSV content
+     */
+    private function generateCsvContent(array $columnPaths): string
+    {
+        $handle = fopen('php://temp', 'r+');
+
+        if (!empty($this->csvColumns)) {
+            $headers = array_values($this->csvColumns);
+            $this->writeCsvLine($handle, $headers);
+        }
+
+        foreach ($this->data as $row) {
+            $csvRow = [];
+            foreach ($columnPaths as $columnPath) {
+                $value = $this->getNestedValue($row, $columnPath);
+
+                if ($value instanceof BackedEnum) {
+                    $value = $value->value;
+                }
+
+                $csvRow[] = $value;
+            }
+            $this->writeCsvLine($handle, $csvRow);
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return $content !== false ? $content : '';
     }
 
     /**

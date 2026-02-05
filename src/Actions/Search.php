@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Traits\Limitable;
 use DevToolbelt\LaravelFastCrud\Traits\Pageable;
 use DevToolbelt\LaravelFastCrud\Traits\Searchable;
@@ -54,6 +55,9 @@ trait Search
     public function search(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast-crud.search.method', 'toArray');
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.search.http_status', HttpStatusCode::OK->value)
+        );
         $defaultPerPage = config('devToolbelt.fast-crud.search.per_page', 40);
         $perPage = (int) $request->input('perPage', $defaultPerPage);
         $modelName = $this->modelClassName();
@@ -66,7 +70,7 @@ trait Search
         $this->buildPagination($query, $perPage, $method);
         $this->afterSearch($this->data);
 
-        return $this->answerSuccess($this->data, meta: [
+        return $this->answerSuccess(data: $this->data, code: $httpStatus, meta: [
             'pagination' => $this->paginationData
         ]);
     }

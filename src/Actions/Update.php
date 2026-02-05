@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -46,6 +47,10 @@ trait Update
     public function update(Request $request, string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast-crud.update.method', 'toArray');
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.update.http_status', HttpStatusCode::OK->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.update.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -85,7 +90,7 @@ trait Update
         $record->update($data);
         $this->afterUpdate($record);
 
-        return $this->answerSuccess($record->{$method}());
+        return $this->answerSuccess(data: $record->{$method}(), code: $httpStatus);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
 use Carbon\Carbon;
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field) Returns column not found error response
- * @method JsonResponse|ResponseInterface answerNoContent() Returns 204 No Content response
+ * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
  */
 trait SoftDelete
 {
@@ -34,6 +35,10 @@ trait SoftDelete
      */
     public function softDelete(string $id): JsonResponse|ResponseInterface
     {
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.soft_delete.http_status', HttpStatusCode::OK->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.soft_delete.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -83,7 +88,7 @@ trait SoftDelete
 
         $this->afterSoftDelete($record);
 
-        return $this->answerNoContent();
+        return $this->answerNoContent(code: $httpStatus);
     }
 
     /**

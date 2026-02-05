@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
- * @method JsonResponse|ResponseInterface answerNoContent() Returns 204 No Content response
+ * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
  */
 trait Delete
 {
@@ -31,6 +32,10 @@ trait Delete
      */
     public function delete(string $id): JsonResponse|ResponseInterface
     {
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.delete.http_status', HttpStatusCode::OK->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.delete.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -56,7 +61,7 @@ trait Delete
         $record->delete();
         $this->afterDelete($record);
 
-        return $this->answerNoContent();
+        return $this->answerNoContent(code: $httpStatus);
     }
 
     /**

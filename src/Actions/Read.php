@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,10 @@ trait Read
     public function read(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast-crud.read.method', 'toArray');
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.read.http_status', HttpStatusCode::OK->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.read.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -53,7 +58,7 @@ trait Read
             return $this->answerRecordNotFound();
         }
 
-        $response = $this->answerSuccess($record->{$method}());
+        $response = $this->answerSuccess(data: $record->{$method}(), code: $httpStatus);
         $this->afterRead($record);
 
         return $response;

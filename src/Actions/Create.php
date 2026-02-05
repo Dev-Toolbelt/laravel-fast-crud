@@ -40,8 +40,11 @@ trait Create
      */
     public function create(Request $request, ?string $method = null): JsonResponse|ResponseInterface
     {
-        $method = $method ?? config('devToolbelt.fast-crud.create.method', 'toArray');
         $data = $request->post();
+        $method = $method ?? config('devToolbelt.fast-crud.create.method', 'toArray');
+        $httpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.create.http_status', HttpStatusCode::CREATED->value)
+        );
 
         if (empty($data)) {
             return $this->answerEmptyPayload();
@@ -64,7 +67,7 @@ trait Create
 
         return $this->answerSuccess(
             data: $record->{$method}(),
-            code: HttpStatusCode::CREATED
+            code: $httpStatus
         );
     }
 
