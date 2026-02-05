@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\SoftDelete;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -88,10 +89,11 @@ final class SoftDeleteActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 400);
             }
 
-            protected function answerNoContent(): JsonResponse|ResponseInterface
-            {
+            protected function answerNoContent(
+                HttpStatusCode $code = HttpStatusCode::OK
+            ): JsonResponse|ResponseInterface {
                 $this->answerNoContentCalled = true;
-                return new JsonResponse(null, 204);
+                return new JsonResponse(null, $code->value);
             }
         };
     }
@@ -239,7 +241,7 @@ final class SoftDeleteActionTest extends TestCase
 
         $this->assertTrue($this->controller->answerNoContentCalled);
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame(204, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testSoftDeleteCallsUpdateWithCorrectFields(): void
@@ -278,6 +280,50 @@ final class SoftDeleteActionTest extends TestCase
         $method->setAccessible(true);
 
         $this->assertSame(42, $method->invoke($this->controller));
+    }
+
+    public function testSoftDeleteUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.http_status' => HttpStatusCode::NO_CONTENT->value,
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $modelMock->shouldReceive('update')->andReturn(true);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->softDelete('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::NO_CONTENT->value, $response->getStatusCode());
+    }
+
+    public function testSoftDeleteUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $modelMock->shouldReceive('update')->andReturn(true);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->softDelete('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createModelMockWithAttributes(): Model

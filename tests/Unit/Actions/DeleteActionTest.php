@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Delete;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -68,10 +69,11 @@ final class DeleteActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 404);
             }
 
-            protected function answerNoContent(): JsonResponse|ResponseInterface
-            {
+            protected function answerNoContent(
+                HttpStatusCode $code = HttpStatusCode::OK
+            ): JsonResponse|ResponseInterface {
                 $this->answerNoContentCalled = true;
-                return new JsonResponse(null, 204);
+                return new JsonResponse(null, $code->value);
             }
         };
     }
@@ -176,7 +178,7 @@ final class DeleteActionTest extends TestCase
 
         $this->assertTrue($this->controller->answerNoContentCalled);
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame(204, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testDeleteCallsModelDeleteMethod(): void
@@ -196,6 +198,48 @@ final class DeleteActionTest extends TestCase
         $this->controller->delete('1');
 
         $this->addToAssertionCount(1);
+    }
+
+    public function testDeleteUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.delete.http_status' => HttpStatusCode::NO_CONTENT->value,
+        ]);
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('delete')->andReturn(true);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->delete('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::NO_CONTENT->value, $response->getStatusCode());
+    }
+
+    public function testDeleteUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('delete')->andReturn(true);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->delete('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createMockModelClass(Builder $builderMock): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Options;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -74,11 +75,14 @@ final class OptionsActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail', 'message' => "Column $field not found"], 400);
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
                 $this->responseData = $data;
-                return new JsonResponse(['status' => 'success', 'data' => $data]);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
         };
     }
@@ -226,6 +230,44 @@ final class OptionsActionTest extends TestCase
         $this->assertNotEmpty($this->controller->responseData);
         $this->assertArrayHasKey('label', $this->controller->responseData[0]);
         $this->assertArrayHasKey('value', $this->controller->responseData[0]);
+    }
+
+    public function testOptionsUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.options.http_status' => HttpStatusCode::ACCEPTED->value,
+        ]);
+
+        $modelMock = $this->createModelMock();
+        $modelClass = $this->createMockModelClass($modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn('name');
+
+        $response = $this->controller->options($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
+    }
+
+    public function testOptionsUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $modelMock = $this->createModelMock();
+        $modelClass = $this->createMockModelClass($modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn('name');
+
+        $response = $this->controller->options($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createModelMock(): Model

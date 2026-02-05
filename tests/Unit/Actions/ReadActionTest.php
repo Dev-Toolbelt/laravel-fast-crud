@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Read;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,10 +63,13 @@ final class ReadActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail', 'message' => 'Not found'], 404);
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
-                return new JsonResponse(['status' => 'success', 'data' => $data]);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
         };
     }
@@ -181,6 +185,59 @@ final class ReadActionTest extends TestCase
 
         $this->assertTrue($this->controller->answerSuccessCalled);
         $this->assertInstanceOf(JsonResponse::class, $response);
+    }
+
+    public function testReadUsesHttpStatusFromConfig(): void
+    {
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test']);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->mockConfig([
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
+            'devToolbelt.fast-crud.read.http_status' => HttpStatusCode::ACCEPTED->value,
+        ]);
+
+        $response = $this->controller->read('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
+    }
+
+    public function testReadUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test']);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->mockConfig([
+            'devToolbelt.fast-crud.read.find_field' => null,
+            'devToolbelt.fast-crud.global.find_field' => 'id',
+            'devToolbelt.fast-crud.read.find_field_is_uuid' => null,
+            'devToolbelt.fast-crud.global.find_field_is_uuid' => false,
+            'devToolbelt.fast-crud.read.method' => 'toArray',
+        ]);
+
+        $response = $this->controller->read('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createMockModelClass(Builder $builderMock): string

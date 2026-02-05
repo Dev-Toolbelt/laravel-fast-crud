@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Update;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -86,10 +87,13 @@ final class UpdateActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 404);
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
-                return new JsonResponse(['status' => 'success', 'data' => $data]);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
 
             protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
@@ -172,10 +176,13 @@ final class UpdateActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 404);
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
-                return new JsonResponse(['status' => 'success', 'data' => $data]);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
 
             protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
@@ -580,6 +587,58 @@ final class UpdateActionTest extends TestCase
         $this->assertFalse($this->controllerWithValidation->answerRecordNotFoundCalled);
     }
 
+    public function testUpdateUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.update.http_status' => HttpStatusCode::ACCEPTED->value,
+        ]);
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test']);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Updated']);
+
+        $response = $this->controller->update($request, '1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
+    }
+
+    public function testUpdateUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.update.http_status' => null,
+        ]);
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test']);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Updated']);
+
+        $response = $this->controller->update($request, '1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
+    }
+
     private function createMockModelClass(Builder $builderMock): string
     {
         $className = 'TestUpdateModel' . uniqid();
@@ -621,10 +680,10 @@ final class UpdateActionTest extends TestCase
                 function config($key, $default = null) {
                     static $config = [];
                     if (is_array($key)) {
-                        $config = array_merge($config, $key);
+                        $config = $key; // Replace instead of merge
                         return null;
                     }
-                    return $config[$key] ?? $default;
+                    return array_key_exists($key, $config) ? $config[$key] : $default;
                 }
             ');
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Restore;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -82,10 +83,13 @@ final class RestoreActionTest extends TestCase
                 return new JsonResponse(['status' => 'fail'], 400);
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
-                return new JsonResponse(['status' => 'success', 'data' => $data]);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
         };
     }
@@ -264,6 +268,52 @@ final class RestoreActionTest extends TestCase
         $this->controller->restore('1');
 
         $this->addToAssertionCount(1);
+    }
+
+    public function testRestoreUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.restore.http_status' => HttpStatusCode::ACCEPTED->value,
+        ]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNotNull')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->restore('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
+    }
+
+    public function testRestoreUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNotNull')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $response = $this->controller->restore('1');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createModelMockWithAttributes(): Model

@@ -69,14 +69,13 @@ final class CreateActionTest extends TestCase
             }
 
             protected function answerSuccess(
-                array $data,
-                array $meta = [],
-                mixed $code = null
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::CREATED,
+                array $meta = []
             ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
                 $this->successData = $data;
-                $statusCode = $code instanceof HttpStatusCode ? $code->value : ($code ?? 200);
-                return new JsonResponse(['status' => 'success', 'data' => $data], $statusCode);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
 
             protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
@@ -139,13 +138,12 @@ final class CreateActionTest extends TestCase
             }
 
             protected function answerSuccess(
-                array $data,
-                array $meta = [],
-                mixed $code = null
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::CREATED,
+                array $meta = []
             ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
-                $statusCode = $code instanceof HttpStatusCode ? $code->value : ($code ?? 200);
-                return new JsonResponse(['status' => 'success', 'data' => $data], $statusCode);
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
             }
 
             protected function runValidation(array $data, array $rules): JsonResponse|ResponseInterface|null
@@ -406,6 +404,38 @@ final class CreateActionTest extends TestCase
 
         $this->assertEmpty($this->controllerWithValidation->failData);
         $this->assertTrue($this->controllerWithValidation->answerSuccessCalled);
+    }
+
+    public function testCreateUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.create.http_status' => HttpStatusCode::OK->value,
+        ]);
+
+        $this->setupModelMock();
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Test']);
+
+        $response = $this->controller->create($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
+    }
+
+    public function testCreateUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $this->setupModelMock();
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('post')->andReturn(['name' => 'Test']);
+
+        $response = $this->controller->create($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::CREATED->value, $response->getStatusCode());
     }
 
     private function setupModelMock(): Model

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Tests\Unit\Actions;
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
 use DevToolbelt\LaravelFastCrud\Actions\Search;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,12 +71,15 @@ final class SearchActionTest extends TestCase
                 $this->afterSearchData = $data;
             }
 
-            protected function answerSuccess(array $data, array $meta = []): JsonResponse|ResponseInterface
-            {
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
                 $this->answerSuccessCalled = true;
                 $this->responseData = $data;
                 $this->responseMeta = $meta;
-                return new JsonResponse(['status' => 'success', 'data' => $data, 'meta' => $meta]);
+                return new JsonResponse(['status' => 'success', 'data' => $data, 'meta' => $meta], $code->value);
             }
 
             public function buildPagination(Builder $query, int $perPage = 40, string $method = 'toArray'): void
@@ -198,6 +202,42 @@ final class SearchActionTest extends TestCase
         $responseData = json_decode($response->getContent(), true);
         $this->assertEquals('success', $responseData['status']);
         $this->assertCount(2, $responseData['data']);
+    }
+
+    public function testSearchUsesHttpStatusFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.search.http_status' => HttpStatusCode::ACCEPTED->value,
+        ]);
+
+        $this->controller = $this->createController();
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = $this->createRequestMock();
+
+        $response = $this->controller->search($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
+    }
+
+    public function testSearchUsesDefaultHttpStatusWhenNotConfigured(): void
+    {
+        $this->mockConfig([]);
+
+        $this->controller = $this->createController();
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $request = $this->createRequestMock();
+
+        $response = $this->controller->search($request);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(HttpStatusCode::OK->value, $response->getStatusCode());
     }
 
     private function createRequestMock(
