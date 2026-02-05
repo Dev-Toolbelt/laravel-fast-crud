@@ -109,6 +109,8 @@ protected function afterRestore(Model $record): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',
     'find_field_is_uuid' => false,
@@ -116,6 +118,7 @@ In `config/devToolbelt/fast-crud.php`:
 
 'restore' => [
     'method' => 'toArray',  // Serialization method
+    'http_status' => HttpStatusCode::OK->value, // 200
     // Override global:
     // 'find_field' => 'uuid',
 ],
@@ -124,6 +127,19 @@ In `config/devToolbelt/fast-crud.php`:
 'soft_delete' => [
     'deleted_at_field' => 'deleted_at',
     'deleted_by_field' => 'deleted_by',
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful restore. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'restore' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
 ],
 ```
 
@@ -153,7 +169,7 @@ Success (200 OK):
 }
 ```
 
-Error - Column Not Found (400):
+Error - Column Not Found (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

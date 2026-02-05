@@ -250,28 +250,99 @@ For detailed validation documentation, see:
 ```php
 // config/devToolbelt/fast-crud.php
 
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 return [
     // Global settings (applied to all actions)
     'global' => [
         'find_field' => 'id',           // Field to find records by
         'find_field_is_uuid' => false,  // Validate as UUID before querying
+        'validation' => [
+            'http_status' => HttpStatusCode::BAD_REQUEST->value, // 400
+        ],
     ],
 
     // Per-action settings (override global)
-    'create' => ['method' => 'toArray'],
-    'read' => ['method' => 'toArray'],
-    'update' => ['method' => 'toArray'],
-    'delete' => [],
+    'create' => [
+        'method' => 'toArray',
+        'http_status' => HttpStatusCode::CREATED->value, // 201
+    ],
+    'read' => [
+        'method' => 'toArray',
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
+    'update' => [
+        'method' => 'toArray',
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
+    'delete' => [
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
     'soft_delete' => [
         'deleted_at_field' => 'deleted_at',
         'deleted_by_field' => 'deleted_by',
+        'http_status' => HttpStatusCode::OK->value, // 200
     ],
-    'restore' => ['method' => 'toArray'],
-    'search' => ['method' => 'toArray', 'per_page' => 40],
-    'options' => ['default_value' => 'id'],
-    'export_csv' => ['method' => 'toArray'],
+    'restore' => [
+        'method' => 'toArray',
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
+    'search' => [
+        'method' => 'toArray',
+        'per_page' => 40,
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
+    'options' => [
+        'default_value' => 'id',
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
+    'export_csv' => [
+        'method' => 'toArray',
+        'http_status' => HttpStatusCode::OK->value, // 200
+    ],
 ];
 ```
+
+### Configurable HTTP Status Codes
+
+Each action supports a configurable `http_status` option to customize the HTTP status code returned on successful responses:
+
+```php
+// Return 202 Accepted instead of 201 Created
+'create' => [
+    'method' => 'toArray',
+    'http_status' => HttpStatusCode::ACCEPTED->value, // 202
+],
+
+// Return 204 No Content instead of 200 OK for delete
+'delete' => [
+    'http_status' => HttpStatusCode::NO_CONTENT->value, // 204
+],
+```
+
+### Validation Error HTTP Status
+
+All validation errors (empty payload, invalid UUID, required field, column not found) use the `global.validation.http_status` configuration:
+
+```php
+'global' => [
+    'validation' => [
+        'http_status' => HttpStatusCode::BAD_REQUEST->value, // 400 (default)
+    ],
+],
+```
+
+To return a different status code for validation errors:
+
+```php
+'global' => [
+    'validation' => [
+        'http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value, // 422
+    ],
+],
+```
+
+Available status codes are defined in the `DevToolbelt\Enums\Http\HttpStatusCode` enum.
 
 ## Selective Route Registration
 

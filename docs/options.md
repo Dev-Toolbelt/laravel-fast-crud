@@ -38,8 +38,11 @@ Each object represents an `<option>` element where:
 Configure the default value column in `config/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'options' => [
     'default_value' => 'id', // Default column for option values
+    'http_status' => HttpStatusCode::OK->value, // 200
 ],
 ```
 
@@ -48,6 +51,19 @@ This allows you to set a project-wide default for the `value` parameter. For exa
 ```php
 'options' => [
     'default_value' => 'uuid',
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful options retrieval. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'options' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
 ],
 ```
 
@@ -129,7 +145,7 @@ Success (200 OK):
 }
 ```
 
-Error - Missing Label (400):
+Error - Missing Label (uses `global.validation.http_status`, default: 400):
 
 ```json
 {
@@ -145,7 +161,7 @@ Error - Missing Label (400):
 }
 ```
 
-Error - Column Not Found (400):
+Error - Column Not Found (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

@@ -132,15 +132,54 @@ GET /products/export-csv?filter[status][eq]=active&sort=-created_at
 GET /products/export-csv?filter[price][btw]=100,500&filter[status][in]=active,featured&sort=name
 ```
 
+## Configuration
+
+In `config/devToolbelt/fast-crud.php`:
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+'export_csv' => [
+    'method' => 'toArray',  // Serialization method
+    'http_status' => HttpStatusCode::OK->value, // 200
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful export. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'export_csv' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
+],
+```
+
 ## Response
 
-The response is a streamed CSV file download with headers:
+The response is a streamed CSV file download with optimized headers for file streaming:
 
 ```
 Content-Type: text/csv; charset=UTF-8
 Content-Disposition: attachment; filename="2024-01-15_10-30-00_products.csv"
-Cache-Control: max-age=0, no-cache, must-revalidate
+Content-Length: 12345
+Content-Transfer-Encoding: binary
+Cache-Control: max-age=0, no-cache, must-revalidate, proxy-revalidate
+Pragma: no-cache
+Expires: 0
+Last-Modified: Thu, 15 Jan 2024 10:30:00 GMT
+X-Content-Type-Options: nosniff
+Accept-Ranges: none
 ```
+
+These headers ensure:
+- **Content-Length**: Allows download progress indicators
+- **Cache-Control/Pragma/Expires**: Prevents caching of the CSV file
+- **X-Content-Type-Options**: Prevents MIME type sniffing for security
+- **Accept-Ranges**: Indicates that range requests are not supported
 
 ## CSV Output Example
 

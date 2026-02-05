@@ -61,22 +61,28 @@ Defines operators: `eq`, `neq`, `in`, `nin`, `like`, `lt`, `gt`, `lte`, `gte`, `
 Global settings apply to all actions, but can be overridden per action:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',
     'find_field_is_uuid' => false,
+    'validation' => [
+        'http_status' => HttpStatusCode::BAD_REQUEST->value,
+    ],
 ],
-'create' => ['method' => 'toArray'],
-'read' => ['method' => 'toArray'],
-'update' => ['method' => 'toArray'],
-'delete' => [],
+'create' => ['method' => 'toArray', 'http_status' => HttpStatusCode::CREATED->value],
+'read' => ['method' => 'toArray', 'http_status' => HttpStatusCode::OK->value],
+'update' => ['method' => 'toArray', 'http_status' => HttpStatusCode::OK->value],
+'delete' => ['http_status' => HttpStatusCode::OK->value],
 'soft_delete' => [
     'deleted_at_field' => 'deleted_at',
     'deleted_by_field' => 'deleted_by',
+    'http_status' => HttpStatusCode::OK->value,
 ],
-'restore' => ['method' => 'toArray'],
-'search' => ['method' => 'toArray', 'per_page' => 40],
-'options' => ['default_value' => 'id'],
-'export_csv' => ['method' => 'toArray'],
+'restore' => ['method' => 'toArray', 'http_status' => HttpStatusCode::OK->value],
+'search' => ['method' => 'toArray', 'per_page' => 40, 'http_status' => HttpStatusCode::OK->value],
+'options' => ['default_value' => 'id', 'http_status' => HttpStatusCode::OK->value],
+'export_csv' => ['method' => 'toArray', 'http_status' => HttpStatusCode::OK->value],
 ```
 
 **Configuration options:**
@@ -87,6 +93,8 @@ Global settings apply to all actions, but can be overridden per action:
 - `deleted_at_field`: Column for soft delete timestamp (soft_delete only)
 - `deleted_by_field`: Column for soft delete user ID (soft_delete only)
 - `default_value`: Default value column for options endpoint (options only)
+- `http_status`: HTTP status code for successful responses (per action, uses `HttpStatusCode` enum)
+- `global.validation.http_status`: HTTP status code for validation errors (default: 400 Bad Request)
 
 Action-specific settings override global. Publish with:
 ```bash
@@ -102,6 +110,7 @@ php artisan vendor:publish --tag=fast-crud-config
 5. **Auto-Discovery** - ServiceProvider registered automatically via Laravel package discovery
 6. **Custom Soft Delete** - Independent soft delete system with audit fields (deleted_at, deleted_by)
 7. **Built-in Validation** - Override `createValidateRules()` or `updateValidateRules()` for Laravel validation
+8. **Configurable HTTP Status** - Each action has configurable `http_status` for success responses via config
 
 ## Model Requirements
 

@@ -158,9 +158,25 @@ protected function afterSearch(array $data): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'search' => [
     'method' => 'toArray',  // Serialization method
     'per_page' => 40,       // Default items per page
+    'http_status' => HttpStatusCode::OK->value, // 200
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful search. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'search' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
 ],
 ```
 

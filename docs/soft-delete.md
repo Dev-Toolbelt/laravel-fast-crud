@@ -137,6 +137,8 @@ protected function getSoftDeleteUserId(): int|string|null
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',
     'find_field_is_uuid' => false,
@@ -145,6 +147,7 @@ In `config/devToolbelt/fast-crud.php`:
 'soft_delete' => [
     'deleted_at_field' => 'deleted_at',  // Timestamp column
     'deleted_by_field' => 'deleted_by',  // User ID column
+    'http_status' => HttpStatusCode::OK->value, // 200
     // Override global:
     // 'find_field' => 'uuid',
 ],
@@ -156,6 +159,19 @@ In `config/devToolbelt/fast-crud.php`:
 'soft_delete' => [
     'deleted_at_field' => 'archived_at',
     'deleted_by_field' => 'archived_by',
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful soft deletion. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 204 No Content instead of 200 OK
+'soft_delete' => [
+    'http_status' => HttpStatusCode::NO_CONTENT->value,
 ],
 ```
 
@@ -173,7 +189,7 @@ Success (204 No Content):
 (empty response body)
 ```
 
-Error - Column Not Found (400):
+Error - Column Not Found (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

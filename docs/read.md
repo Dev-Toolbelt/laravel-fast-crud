@@ -69,6 +69,8 @@ protected function afterRead(Model $record): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',           // Field to find records by
     'find_field_is_uuid' => false,  // Validate as UUID
@@ -76,6 +78,7 @@ In `config/devToolbelt/fast-crud.php`:
 
 'read' => [
     'method' => 'toArray',          // Serialization method
+    'http_status' => HttpStatusCode::OK->value, // 200
     // Override global settings for this action:
     // 'find_field' => 'uuid',
     // 'find_field_is_uuid' => true,
@@ -101,6 +104,19 @@ When `true`, validates that the identifier is a valid UUID before querying.
 ### method
 
 The model method used to serialize the response.
+
+### http_status
+
+The HTTP status code returned on successful read. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'read' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
+],
+```
 
 ## Request Example
 
@@ -148,7 +164,7 @@ Error - Not Found (404):
 }
 ```
 
-Error - Invalid UUID (400):
+Error - Invalid UUID (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

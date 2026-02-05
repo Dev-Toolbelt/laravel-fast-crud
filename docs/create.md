@@ -59,7 +59,7 @@ protected function createValidateRules(): array
 
 ### Validation Error Response
 
-Validation errors return a 400 response with detailed information about each failed rule:
+Validation errors return a response with detailed information about each failed rule. The HTTP status code is configurable via `global.validation.http_status` (default: 400 Bad Request):
 
 ```json
 {
@@ -207,8 +207,11 @@ protected function afterCreate(Model $record): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'create' => [
     'method' => 'toArray',  // Serialization method for response
+    'http_status' => HttpStatusCode::CREATED->value, // 201
 ],
 ```
 
@@ -220,6 +223,19 @@ The model method used to serialize the response. Default: `toArray`.
 // Use a custom method
 'create' => [
     'method' => 'toApiResponse',
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful creation. Default: `201 Created`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 201 Created
+'create' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
 ],
 ```
 
@@ -253,7 +269,7 @@ Success (201 Created):
 }
 ```
 
-Error - Empty Payload (400 Bad Request):
+Error - Empty Payload (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

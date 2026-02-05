@@ -104,15 +104,31 @@ protected function afterDelete(Model $record): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',
     'find_field_is_uuid' => false,
 ],
 
 'delete' => [
+    'http_status' => HttpStatusCode::OK->value, // 200
     // Override global settings:
     // 'find_field' => 'uuid',
     // 'find_field_is_uuid' => true,
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful deletion. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 204 No Content instead of 200 OK
+'delete' => [
+    'http_status' => HttpStatusCode::NO_CONTENT->value,
 ],
 ```
 
@@ -146,7 +162,7 @@ Error - Not Found (404):
 }
 ```
 
-Error - Invalid UUID (400):
+Error - Invalid UUID (uses `global.validation.http_status`, default: 400):
 
 ```json
 {

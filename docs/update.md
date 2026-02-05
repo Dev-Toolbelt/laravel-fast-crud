@@ -64,7 +64,7 @@ protected function updateValidateRules(): array
 
 ### Validation Error Response
 
-Validation errors return a 400 response with detailed information about each failed rule:
+Validation errors return a response with detailed information about each failed rule. The HTTP status code is configurable via `global.validation.http_status` (default: 400 Bad Request):
 
 ```json
 {
@@ -248,6 +248,8 @@ protected function afterUpdate(Model $record): void
 In `config/devToolbelt/fast-crud.php`:
 
 ```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
 'global' => [
     'find_field' => 'id',
     'find_field_is_uuid' => false,
@@ -255,8 +257,22 @@ In `config/devToolbelt/fast-crud.php`:
 
 'update' => [
     'method' => 'toArray',
+    'http_status' => HttpStatusCode::OK->value, // 200
     // Override global settings:
     // 'find_field' => 'uuid',
+],
+```
+
+### http_status
+
+The HTTP status code returned on successful update. Default: `200 OK`.
+
+```php
+use DevToolbelt\Enums\Http\HttpStatusCode;
+
+// Return 202 Accepted instead of 200 OK
+'update' => [
+    'http_status' => HttpStatusCode::ACCEPTED->value,
 ],
 ```
 
@@ -311,7 +327,7 @@ Error - Not Found (404):
 }
 ```
 
-Error - Empty Payload (400):
+Error - Empty Payload (uses `global.validation.http_status`, default: 400):
 
 ```json
 {
