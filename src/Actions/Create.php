@@ -23,7 +23,7 @@ use Psr\Http\Message\ResponseInterface;
  * 5. afterCreate() - Post-creation operations (events, cache, etc.)
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error
+ * @method JsonResponse|ResponseInterface answerEmptyPayload(HttpStatusCode $code) Returns empty payload error
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta, HttpStatusCode $code)
  *         Returns success response
  * @method JsonResponse|ResponseInterface|null runValidation(array $data, array $rules)
@@ -46,8 +46,12 @@ trait Create
             config('devToolbelt.fast-crud.create.http_status', HttpStatusCode::CREATED->value)
         );
 
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
+        );
+
         if (empty($data)) {
-            return $this->answerEmptyPayload();
+            return $this->answerEmptyPayload($validationHttpStatus);
         }
 
         $this->beforeCreateFill($data);

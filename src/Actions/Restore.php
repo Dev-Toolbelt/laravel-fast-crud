@@ -19,9 +19,9 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method bool hasModelAttribute(Model $model, string $attributeName) Checks if model has attribute
- * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
+ * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
- * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field) Returns column not found error response
+ * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Returns column not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  */
 trait Restore
@@ -40,6 +40,10 @@ trait Restore
             config('devToolbelt.fast-crud.restore.http_status', HttpStatusCode::OK->value)
         );
 
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.restore.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -50,7 +54,7 @@ trait Restore
         $deletedByField = config('devToolbelt.fast-crud.soft_delete.deleted_by_field', 'deleted_by');
 
         if ($isUuid && !Str::isUuid($id)) {
-            return $this->answerInvalidUuid();
+            return $this->answerInvalidUuid($validationHttpStatus);
         }
 
         $modelName = $this->modelClassName();
@@ -59,11 +63,11 @@ trait Restore
         $model = new $modelName();
 
         if (!$this->hasModelAttribute($model, $deletedAtField)) {
-            return $this->answerColumnNotFound($deletedAtField);
+            return $this->answerColumnNotFound($deletedAtField, $validationHttpStatus);
         }
 
         if (!$this->hasModelAttribute($model, $deletedByField)) {
-            return $this->answerColumnNotFound($deletedByField);
+            return $this->answerColumnNotFound($deletedByField, $validationHttpStatus);
         }
 
         $query = $modelName::query()

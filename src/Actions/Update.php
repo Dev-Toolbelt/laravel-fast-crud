@@ -27,8 +27,8 @@ use Psr\Http\Message\ResponseInterface;
  * 7. afterUpdate() - Post-update operations (events, cache, etc.)
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
- * @method JsonResponse|ResponseInterface answerEmptyPayload() Returns empty payload error response
+ * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
+ * @method JsonResponse|ResponseInterface answerEmptyPayload(HttpStatusCode $code) Returns empty payload error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  * @method JsonResponse|ResponseInterface|null runValidation(array $data, array $rules)
@@ -51,6 +51,10 @@ trait Update
             config('devToolbelt.fast-crud.update.http_status', HttpStatusCode::OK->value)
         );
 
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.update.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -58,13 +62,13 @@ trait Update
             ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         if ($isUuid && !Str::isUuid($id)) {
-            return $this->answerInvalidUuid();
+            return $this->answerInvalidUuid($validationHttpStatus);
         }
 
         $data = $request->post();
 
         if (empty($data)) {
-            return $this->answerEmptyPayload();
+            return $this->answerEmptyPayload($validationHttpStatus);
         }
 
         $this->beforeUpdateFill($data);

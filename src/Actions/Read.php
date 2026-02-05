@@ -17,7 +17,7 @@ use Psr\Http\Message\ResponseInterface;
  * Retrieves a single model instance by its identifier field (configurable).
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
+ * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  */
@@ -33,8 +33,13 @@ trait Read
     public function read(string $id, ?string $method = null): JsonResponse|ResponseInterface
     {
         $method = $method ?? config('devToolbelt.fast-crud.read.method', 'toArray');
+
         $httpStatus = HttpStatusCode::from(
             config('devToolbelt.fast-crud.read.http_status', HttpStatusCode::OK->value)
+        );
+
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
         );
 
         $findField = config('devToolbelt.fast-crud.read.find_field')
@@ -44,7 +49,7 @@ trait Read
             ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         if ($isUuid && !Str::isUuid($id)) {
-            return $this->answerInvalidUuid();
+            return $this->answerInvalidUuid($validationHttpStatus);
         }
 
         $modelName = $this->modelClassName();

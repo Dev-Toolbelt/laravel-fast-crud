@@ -22,8 +22,8 @@ use Psr\Http\Message\ResponseInterface;
  * - value (optional) - The column name to use as the value (default: external_id)
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerRequired(string $field) Returns required field error response
- * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field) Returns column not found error response
+ * @method JsonResponse|ResponseInterface answerRequired(string $field, HttpStatusCode $code) Returns required field error response
+ * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Returns column not found error response
  * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
  */
 trait Options
@@ -46,12 +46,16 @@ trait Options
             config('devToolbelt.fast-crud.options.http_status', HttpStatusCode::OK->value)
         );
 
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
+        );
+
         $defaultValue = config('devToolbelt.fast-crud.options.default_value', 'id');
         $value = $request->get('value', $defaultValue);
         $label = $request->get('label');
 
         if ($label === null) {
-            return $this->answerRequired('label');
+            return $this->answerRequired('label', $validationHttpStatus);
         }
 
         $modelName = $this->modelClassName();
@@ -60,7 +64,7 @@ trait Options
         $model = new $modelName();
 
         if (!$this->hasModelAttribute($model, $label)) {
-            return $this->answerColumnNotFound($label);
+            return $this->answerColumnNotFound($label, $validationHttpStatus);
         }
 
         $query = $model->newQuery()

@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
  * Supports soft deletes if the model uses the SoftDeletes trait.
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerInvalidUuid() Returns invalid UUID error response
+ * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
  */
@@ -36,6 +36,10 @@ trait Delete
             config('devToolbelt.fast-crud.delete.http_status', HttpStatusCode::OK->value)
         );
 
+        $validationHttpStatus = HttpStatusCode::from(
+            config('devToolbelt.fast-crud.global.validation.http_status', HttpStatusCode::BAD_REQUEST->value)
+        );
+
         $findField = config('devToolbelt.fast-crud.delete.find_field')
             ?? config('devToolbelt.fast-crud.global.find_field', 'id');
 
@@ -43,7 +47,7 @@ trait Delete
             ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         if ($isUuid && !Str::isUuid($id)) {
-            return $this->answerInvalidUuid();
+            return $this->answerInvalidUuid($validationHttpStatus);
         }
 
         $modelName = $this->modelClassName();
