@@ -152,7 +152,7 @@ final class CrudActionsIntegrationTest extends IntegrationTestCase
 
     // ==================== DELETE ACTION ====================
 
-    public function testDeleteRemovesRecord(): void
+    public function testDeleteDelegatesToSoftDeleteWhenModelUsesSoftDeletes(): void
     {
         $product = Product::query()->create([
             'name' => 'To Delete',
@@ -165,7 +165,10 @@ final class CrudActionsIntegrationTest extends IntegrationTestCase
 
         $this->assertEquals('success', $data['status']);
         $this->assertNull($data['data']);
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+
+        // Since Product uses SoftDeletes, delete() delegates to softDelete()
+        // The record should be soft deleted, not hard deleted
+        $this->assertNotNull($product->fresh()->deleted_at);
     }
 
     public function testDeleteReturnsNotFoundError(): void

@@ -32,10 +32,19 @@ final class DeleteActionTest extends TestCase
             public bool $answerRecordNotFoundCalled = false;
             public bool $answerNoContentCalled = false;
             public string $modelClass = '';
+            public bool $softDeleteCalled = false;
+            public ?string $softDeleteId = null;
 
             public function setModelClass(string $class): void
             {
                 $this->modelClass = $class;
+            }
+
+            public function softDelete(string $id): JsonResponse|ResponseInterface
+            {
+                $this->softDeleteCalled = true;
+                $this->softDeleteId = $id;
+                return new JsonResponse(null, 200);
             }
 
             protected function modelClassName(): string
@@ -85,6 +94,10 @@ final class DeleteActionTest extends TestCase
     {
         $this->mockConfig(['devToolbelt.fast-crud.delete.find_field_is_uuid' => true]);
 
+        $builderMock = Mockery::mock(Builder::class);
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
         $this->controller->delete('not-a-uuid');
 
         $this->assertTrue($this->controller->answerInvalidUuidCalled);
@@ -111,7 +124,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -130,7 +143,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -149,7 +162,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -168,7 +181,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -184,12 +197,12 @@ final class DeleteActionTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
-    public function testDeleteCallsModelForceDeleteMethod(): void
+    public function testDeleteCallsModelDeleteMethod(): void
     {
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->once()->andReturn(true);
+        $modelMock->shouldReceive('delete')->once()->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -210,7 +223,7 @@ final class DeleteActionTest extends TestCase
         ]);
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -230,7 +243,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig([]);
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('forceDelete')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -252,6 +265,10 @@ final class DeleteActionTest extends TestCase
             'devToolbelt.fast-crud.global.validation.http_status' => HttpStatusCode::UNPROCESSABLE_ENTITY->value,
         ]);
 
+        $builderMock = Mockery::mock(Builder::class);
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
         $response = $this->controller->delete('not-a-uuid');
 
         $this->assertTrue($this->controller->answerInvalidUuidCalled);
@@ -265,11 +282,71 @@ final class DeleteActionTest extends TestCase
             'devToolbelt.fast-crud.delete.find_field_is_uuid' => true,
         ]);
 
+        $builderMock = Mockery::mock(Builder::class);
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
         $response = $this->controller->delete('not-a-uuid');
 
         $this->assertTrue($this->controller->answerInvalidUuidCalled);
         $this->assertSame(HttpStatusCode::BAD_REQUEST, $this->controller->invalidUuidStatusCode);
         $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
+    }
+
+    public function testDeleteDelegatesToSoftDeleteWhenModelUsesSoftDeletes(): void
+    {
+        $this->mockConfig();
+
+        $modelClass = $this->createMockModelClassWithSoftDeletes();
+        $this->controller->setModelClass($modelClass);
+
+        $this->controller->delete('123');
+
+        $this->assertTrue($this->controller->softDeleteCalled);
+        $this->assertSame('123', $this->controller->softDeleteId);
+    }
+
+    public function testDeleteDoesNotDelegateToSoftDeleteWhenModelDoesNotUseSoftDeletes(): void
+    {
+        $this->mockConfig();
+
+        $modelMock = Mockery::mock(Model::class);
+        $modelMock->shouldReceive('delete')->andReturn(true);
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->controller->delete('123');
+
+        $this->assertFalse($this->controller->softDeleteCalled);
+        $this->assertTrue($this->controller->answerNoContentCalled);
+    }
+
+    public function testModelUsesSoftDeletesReturnsTrueForSoftDeletesModel(): void
+    {
+        $modelClass = $this->createMockModelClassWithSoftDeletes();
+
+        $reflection = new \ReflectionClass($this->controller);
+        $method = $reflection->getMethod('modelUsesSoftDeletes');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($this->controller, $modelClass));
+    }
+
+    public function testModelUsesSoftDeletesReturnsFalseForRegularModel(): void
+    {
+        $builderMock = Mockery::mock(Builder::class);
+        $modelClass = $this->createMockModelClass($builderMock);
+
+        $reflection = new \ReflectionClass($this->controller);
+        $method = $reflection->getMethod('modelUsesSoftDeletes');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke($this->controller, $modelClass));
     }
 
     private function createMockModelClass(Builder $builderMock): string
@@ -292,6 +369,21 @@ final class DeleteActionTest extends TestCase
         $fullClassName::$builderMock = $builderMock;
 
         return $fullClassName;
+    }
+
+    private function createMockModelClassWithSoftDeletes(): string
+    {
+        $className = 'TestDeleteModelWithSoftDeletes' . uniqid();
+
+        eval("
+            namespace DevToolbelt\\LaravelFastCrud\\Tests\\Unit\\Actions;
+
+            class {$className} extends \\Illuminate\\Database\\Eloquent\\Model {
+                use \\Illuminate\\Database\\Eloquent\\SoftDeletes;
+            }
+        ");
+
+        return "DevToolbelt\\LaravelFastCrud\\Tests\\Unit\\Actions\\{$className}";
     }
 
     private function mockConfig(array $overrides = []): void

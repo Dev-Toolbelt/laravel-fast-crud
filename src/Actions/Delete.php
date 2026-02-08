@@ -7,6 +7,7 @@ namespace DevToolbelt\LaravelFastCrud\Actions;
 use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
@@ -15,22 +16,56 @@ use Psr\Http\Message\ResponseInterface;
  * Provides the delete (DELETE by ID) action for CRUD controllers.
  *
  * Deletes a model instance by its identifier field (configurable).
- * Supports soft deletes if the model uses the SoftDeletes trait.
+ * If the model uses Laravel's SoftDeletes trait, delegates to softDelete() action.
+ * Otherwise, performs a hard delete using forceDelete().
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
  * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
+ * @method JsonResponse|ResponseInterface softDelete(string $id) Soft deletes a record (from SoftDelete trait)
  */
 trait Delete
 {
     /**
      * Deletes a record by its identifier field.
      *
+     * If the model uses Laravel's SoftDeletes trait, this method delegates
+     * to the softDelete() action. Otherwise, it performs a hard delete.
+     *
      * @param string $id The identifier value of the record to delete
      * @return JsonResponse|ResponseInterface 204 No Content on success, or error response
      */
     public function delete(string $id): JsonResponse|ResponseInterface
+    {
+        $modelName = $this->modelClassName();
+
+        // Check if model uses SoftDeletes trait - delegate to softDelete action
+        if ($this->modelUsesSoftDeletes($modelName)) {
+            return $this->softDelete($id);
+        }
+
+        return $this->performHardDelete($id);
+    }
+
+    /**
+     * Checks if the model uses Laravel's SoftDeletes trait.
+     *
+     * @param string $modelName The fully qualified model class name
+     * @return bool True if the model uses SoftDeletes trait
+     */
+    protected function modelUsesSoftDeletes(string $modelName): bool
+    {
+        return in_array(SoftDeletes::class, class_uses_recursive($modelName), true);
+    }
+
+    /**
+     * Performs a hard delete on the record.
+     *
+     * @param string $id The identifier value of the record to delete
+     * @return JsonResponse|ResponseInterface 204 No Content on success, or error response
+     */
+    protected function performHardDelete(string $id): JsonResponse|ResponseInterface
     {
         $httpStatus = HttpStatusCode::from(
             config('devToolbelt.fast-crud.delete.http_status', HttpStatusCode::OK->value)
@@ -62,7 +97,7 @@ trait Delete
         }
 
         $this->beforeDelete($record);
-        $record->forceDelete();
+        $record->delete();
         $this->afterDelete($record);
 
         return $this->answerNoContent(code: $httpStatus);
