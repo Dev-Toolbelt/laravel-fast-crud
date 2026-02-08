@@ -14,8 +14,8 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Provides the restore action for CRUD controllers.
  *
- * Restores a soft deleted model instance by clearing the deleted_at and deleted_by fields.
- * Uses the same field configuration as the SoftDelete action.
+ * Restores a soft deleted model instance by calling the model's restore() method.
+ * Requires the model to use Laravel's SoftDeletes trait.
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method bool hasModelAttribute(Model $model, string $attributeName) Checks if model has attribute
@@ -51,7 +51,6 @@ trait Restore
             ?? config('devToolbelt.fast-crud.global.find_field_is_uuid', false);
 
         $deletedAtField = config('devToolbelt.fast-crud.soft_delete.deleted_at_field', 'deleted_at');
-        $deletedByField = config('devToolbelt.fast-crud.soft_delete.deleted_by_field', 'deleted_by');
 
         if ($isUuid && !Str::isUuid($id)) {
             return $this->answerInvalidUuid($validationHttpStatus);
@@ -66,14 +65,9 @@ trait Restore
             return $this->answerColumnNotFound($deletedAtField, $validationHttpStatus);
         }
 
-        if (!$this->hasModelAttribute($model, $deletedByField)) {
-            return $this->answerColumnNotFound($deletedByField, $validationHttpStatus);
-        }
-
-        $query = $modelName::query()
+        $query = $modelName::withTrashed()
             ->where($findField, $id)
-            ->whereNotNull($deletedAtField)
-            ->whereNotNull($deletedByField);
+            ->whereNotNull($deletedAtField);
 
         $this->modifyRestoreQuery($query);
 
@@ -85,12 +79,7 @@ trait Restore
         }
 
         $this->beforeRestore($record);
-
-        $record->update([
-            $deletedAtField => null,
-            $deletedByField => null,
-        ]);
-
+        $record->restore();
         $this->afterRestore($record);
 
         return $this->answerSuccess(data: $record->{$method}(), code: $httpStatus);

@@ -14,8 +14,8 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Provides the soft delete action for CRUD controllers.
  *
- * Soft deletes a model instance by updating configurable fields (deleted_at, deleted_by).
- * Does not require the model to use Laravel's SoftDeletes trait.
+ * Soft deletes a model instance by calling the model's delete() method.
+ * Requires the model to use Laravel's SoftDeletes trait.
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method bool hasModelAttribute(Model $model, string $attributeName) Checks if model has attribute

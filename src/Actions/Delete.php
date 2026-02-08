@@ -62,7 +62,7 @@ trait Delete
         }
 
         $this->beforeDelete($record);
-        $record->delete();
+        $record->forceDelete();
         $this->afterDelete($record);
 
         return $this->answerNoContent(code: $httpStatus);

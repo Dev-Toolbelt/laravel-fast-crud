@@ -18,3 +18,5 @@ parameters:
     - '#Anonymous function should return Illuminate\\Database\\Eloquent\\Builder but returns Illuminate\\Database\\Query\\Builder#'
     # Query Builder type covariance in Laravel
     - '#expects Illuminate\\Database\\Eloquent\\Builder, Illuminate\\Database\\Query\\Builder given#'
+    # SoftDeletes trait methods - restore() is added by the trait
+    - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::restore\(\)#'
