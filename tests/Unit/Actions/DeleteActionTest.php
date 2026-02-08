@@ -111,7 +111,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -130,7 +130,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -149,7 +149,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -168,7 +168,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -184,12 +184,12 @@ final class DeleteActionTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
-    public function testDeleteCallsModelDeleteMethod(): void
+    public function testDeleteCallsModelForceDeleteMethod(): void
     {
         $this->mockConfig();
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->once()->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->once()->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -210,7 +210,7 @@ final class DeleteActionTest extends TestCase
         ]);
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -230,7 +230,7 @@ final class DeleteActionTest extends TestCase
         $this->mockConfig([]);
 
         $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('delete')->andReturn(true);
+        $modelMock->shouldReceive('forceDelete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();

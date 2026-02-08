@@ -147,30 +147,12 @@ final class RestoreActionTest extends TestCase
         $this->assertSame('deleted_at_missing', $this->controller->columnNotFoundField);
     }
 
-    public function testRestoreReturnsColumnNotFoundWhenDeletedByIsMissing(): void
-    {
-        $this->mockConfig([
-            'devToolbelt.fast-crud.soft_delete.deleted_by_field' => 'deleted_by_missing',
-        ]);
-
-        $modelMock = $this->createModelMockWithAttributes();
-        $builderMock = Mockery::mock(Builder::class);
-
-        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
-        $this->controller->setModelClass($modelClass);
-
-        $this->controller->restore('1');
-
-        $this->assertTrue($this->controller->answerColumnNotFoundCalled);
-        $this->assertSame('deleted_by_missing', $this->controller->columnNotFoundField);
-    }
-
     public function testModifyRestoreQueryHookIsCalled(): void
     {
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -191,7 +173,7 @@ final class RestoreActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -212,7 +194,7 @@ final class RestoreActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -233,7 +215,7 @@ final class RestoreActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -250,18 +232,12 @@ final class RestoreActionTest extends TestCase
         $this->assertInstanceOf(JsonResponse::class, $response);
     }
 
-    public function testRestoreCallsUpdateWithCorrectFields(): void
+    public function testRestoreCallsRestoreMethod(): void
     {
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')
-            ->once()
-            ->with(Mockery::on(function ($data) {
-                return $data['deleted_at'] === null
-                    && $data['deleted_by'] === null;
-            }))
-            ->andReturn(true);
+        $modelMock->shouldReceive('restore')->once()->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -284,7 +260,7 @@ final class RestoreActionTest extends TestCase
         ]);
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -306,7 +282,7 @@ final class RestoreActionTest extends TestCase
         $this->mockConfig([]);
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('restore')->andReturn(true);
         $modelMock->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $builderMock = Mockery::mock(Builder::class);
@@ -412,7 +388,7 @@ final class RestoreActionTest extends TestCase
                 public static \$builderMock;
                 public static \$modelInstance;
 
-                public static function query() {
+                public static function withTrashed() {
                     return self::\$builderMock;
                 }
 

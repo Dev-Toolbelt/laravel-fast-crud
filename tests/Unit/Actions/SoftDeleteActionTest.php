@@ -35,7 +35,6 @@ final class SoftDeleteActionTest extends TestCase
             public string $columnNotFoundField = '';
             public bool $answerNoContentCalled = false;
             public string $modelClass = '';
-            public int|string|null $softDeleteUserId = 1;
 
             public function setModelClass(string $class): void
             {
@@ -60,11 +59,6 @@ final class SoftDeleteActionTest extends TestCase
             protected function afterSoftDelete(Model $record): void
             {
                 $this->afterSoftDeleteRecord = $record;
-            }
-
-            protected function getSoftDeleteUserId(): int|string|null
-            {
-                return $this->softDeleteUserId;
             }
 
             public function hasModelAttribute(Model $model, string $attributeName): bool
@@ -174,7 +168,7 @@ final class SoftDeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -194,7 +188,7 @@ final class SoftDeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -214,7 +208,7 @@ final class SoftDeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -234,7 +228,7 @@ final class SoftDeleteActionTest extends TestCase
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -251,19 +245,12 @@ final class SoftDeleteActionTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
-    public function testSoftDeleteCallsUpdateWithCorrectFields(): void
+    public function testSoftDeleteCallsDeleteMethod(): void
     {
         $this->mockConfig();
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')
-            ->once()
-            ->with(Mockery::on(function ($data) {
-                return isset($data['deleted_at'])
-                    && isset($data['deleted_by'])
-                    && $data['deleted_by'] === 1;
-            }))
-            ->andReturn(true);
+        $modelMock->shouldReceive('delete')->once()->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -276,38 +263,6 @@ final class SoftDeleteActionTest extends TestCase
         $this->controller->softDelete('1');
 
         $this->addToAssertionCount(1);
-    }
-
-    public function testSoftDeleteDoesNotCallLaravelDeleteMethod(): void
-    {
-        $this->mockConfig();
-
-        $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
-        $modelMock->shouldNotReceive('delete');
-
-        $builderMock = Mockery::mock(Builder::class);
-        $builderMock->shouldReceive('where')->andReturnSelf();
-        $builderMock->shouldReceive('whereNull')->andReturnSelf();
-        $builderMock->shouldReceive('first')->andReturn($modelMock);
-
-        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
-        $this->controller->setModelClass($modelClass);
-
-        $this->controller->softDelete('1');
-
-        $this->addToAssertionCount(1);
-    }
-
-    public function testGetSoftDeleteUserIdReturnsConfiguredValue(): void
-    {
-        $this->controller->softDeleteUserId = 42;
-
-        $reflection = new \ReflectionClass($this->controller);
-        $method = $reflection->getMethod('getSoftDeleteUserId');
-        $method->setAccessible(true);
-
-        $this->assertSame(42, $method->invoke($this->controller));
     }
 
     public function testSoftDeleteUsesHttpStatusFromConfig(): void
@@ -317,7 +272,7 @@ final class SoftDeleteActionTest extends TestCase
         ]);
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();
@@ -338,7 +293,7 @@ final class SoftDeleteActionTest extends TestCase
         $this->mockConfig([]);
 
         $modelMock = $this->createModelMockWithAttributes();
-        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldReceive('delete')->andReturn(true);
 
         $builderMock = Mockery::mock(Builder::class);
         $builderMock->shouldReceive('where')->andReturnSelf();

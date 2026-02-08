@@ -231,18 +231,17 @@ final class CrudActionsIntegrationTest extends IntegrationTestCase
             'name' => 'Deleted Product',
             'price' => 100,
             'status' => 'active',
-            'deleted_at' => now(),
-            'deleted_by' => 1,
         ]);
+
+        // Soft delete the product first
+        $product->delete();
+        $this->assertNotNull($product->fresh()->deleted_at);
 
         $response = $this->controller->restore((string) $product->id);
         $data = $this->getResponseData($response);
 
         $this->assertEquals('success', $data['status']);
-
-        $product->refresh();
-        $this->assertNull($product->deleted_at);
-        $this->assertNull($product->deleted_by);
+        $this->assertNull($product->fresh()->deleted_at);
     }
 
     public function testRestoreReturnsNotFoundForNonDeletedRecord(): void
