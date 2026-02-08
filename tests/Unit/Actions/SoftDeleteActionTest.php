@@ -278,6 +278,27 @@ final class SoftDeleteActionTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    public function testSoftDeleteDoesNotCallLaravelDeleteMethod(): void
+    {
+        $this->mockConfig();
+
+        $modelMock = $this->createModelMockWithAttributes();
+        $modelMock->shouldReceive('update')->andReturn(true);
+        $modelMock->shouldNotReceive('delete');
+
+        $builderMock = Mockery::mock(Builder::class);
+        $builderMock->shouldReceive('where')->andReturnSelf();
+        $builderMock->shouldReceive('whereNull')->andReturnSelf();
+        $builderMock->shouldReceive('first')->andReturn($modelMock);
+
+        $modelClass = $this->createMockModelClass($builderMock, $modelMock);
+        $this->controller->setModelClass($modelClass);
+
+        $this->controller->softDelete('1');
+
+        $this->addToAssertionCount(1);
+    }
+
     public function testGetSoftDeleteUserIdReturnsConfiguredValue(): void
     {
         $this->controller->softDeleteUserId = 42;

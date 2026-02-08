@@ -18,5 +18,3 @@ parameters:
     - '#Anonymous function should return Illuminate\\Database\\Eloquent\\Builder but returns Illuminate\\Database\\Query\\Builder#'
     # Query Builder type covariance in Laravel
     - '#expects Illuminate\\Database\\Eloquent\\Builder, Illuminate\\Database\\Query\\Builder given#'
-    # Auth facade magic method - auth() returns Factory but proxies to Guard via __call
-    - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::user\(\)#'

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DevToolbelt\LaravelFastCrud\Actions;
 
-use Carbon\Carbon;
 use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -84,12 +83,7 @@ trait SoftDelete
         }
 
         $this->beforeSoftDelete($record);
-
-        $record->update([
-            $deletedAtField => Carbon::now(),
-            $deletedByField => $this->getSoftDeleteUserId(),
-        ]);
-
+        $record->delete();
         $this->afterSoftDelete($record);
 
         return $this->answerNoContent(code: $httpStatus);
@@ -137,26 +131,5 @@ trait SoftDelete
      */
     protected function afterSoftDelete(Model $record): void
     {
-    }
-
-    /**
-     * Returns the ID of the user performing the soft delete.
-     *
-     * Override this method to provide the authenticated user ID
-     * or any other identifier for audit purposes.
-     *
-     * @return int|string|null The user ID or null if not available
-     *
-     * @example
-     * ```php
-     * protected function getSoftDeleteUserId(): ?int
-     * {
-     *     return auth()->id();
-     * }
-     * ```
-     */
-    protected function getSoftDeleteUserId(): int|string|null
-    {
-        return auth()->user()?->getAuthIdentifier();
     }
 }
