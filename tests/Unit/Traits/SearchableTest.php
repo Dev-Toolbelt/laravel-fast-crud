@@ -14,6 +14,13 @@ final class SearchableTest extends TestCase
 {
     use Searchable;
 
+    protected string $termFieldName = 'term';
+
+    /**
+     * @var array<int, string>
+     */
+    protected array $termFields = ['login', 'name', 'email'];
+
     private Builder&MockInterface $queryMock;
 
     protected function setUp(): void
@@ -591,6 +598,102 @@ final class SearchableTest extends TestCase
             ->andReturnSelf();
 
         $this->processSearch($this->queryMock, ['order.created_at' => ['btw' => '2024-01,2024-03']]);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithTermFilterUsesIlikeForPgsql(): void
+    {
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('login', 'ILIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('name', 'ILIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('email', 'ILIKE', '%john%')
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('where')
+            ->once()
+            ->with(Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['term' => 'john']);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithTermFilterUsesLikeForMysql(): void
+    {
+        $queryMock = $this->createQueryMockWithConnection('mysql');
+
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('login', 'LIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('name', 'LIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('email', 'LIKE', '%john%')
+            ->andReturnSelf();
+
+        $queryMock->shouldReceive('where')
+            ->once()
+            ->with(Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($queryMock, ['term' => 'john']);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithCustomTermFieldName(): void
+    {
+        $this->termFieldName = 'q';
+
+        $innerQueryMock = Mockery::mock(Builder::class);
+        $innerQueryMock->shouldReceive('where')
+            ->once()
+            ->with('login', 'ILIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('name', 'ILIKE', '%john%')
+            ->andReturnSelf();
+        $innerQueryMock->shouldReceive('orWhere')
+            ->once()
+            ->with('email', 'ILIKE', '%john%')
+            ->andReturnSelf();
+
+        $this->queryMock->shouldReceive('where')
+            ->once()
+            ->with(Mockery::on(function ($closure) use ($innerQueryMock) {
+                $closure($innerQueryMock);
+                return true;
+            }))
+            ->andReturnSelf();
+
+        $this->processSearch($this->queryMock, ['q' => 'john']);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testProcessSearchWithTermFilterIgnoresEmptyValue(): void
+    {
+        $this->queryMock->shouldNotReceive('where');
+
+        $this->processSearch($this->queryMock, ['term' => '   ']);
         $this->addToAssertionCount(1);
     }
 }
