@@ -14,6 +14,7 @@ A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTfu
 - Works exclusively with Laravel 11+
 - 9 pre-built actions (Create, Read, Update, Delete, Soft Delete, Restore, Search, Options, Export CSV)
 - 14+ search operators for flexible filtering (eq, like, between, in, json, etc.)
+- Multi-field term search via `filter[term]` with database-aware `LIKE`/`ILIKE`
 - Built-in validation using Laravel's validation rules
 - Automatic route registration with permission middleware support
 - Hook system for customization without overriding entire methods
@@ -109,6 +110,56 @@ GET /products?filter[name][like]=Samsung&filter[price][gte]=100&filter[status][i
 | `ltn` | Less than or NULL | `filter[stock][ltn]=5` |
 | `nn` | Not null | `filter[deleted_at][nn]=1` |
 | `json` | JSON contains | `filter[tags][json]=electronics` |
+
+## Term Search
+
+In addition to operator-based filters, Search supports a configurable term filter
+that matches multiple fields using `LIKE` (MySQL/SQLite) or `ILIKE` (PostgreSQL).
+
+### Usage
+
+```
+GET /products?filter[term]=john
+```
+
+### Controller Configuration
+
+```php
+class ProductController extends CrudController
+{
+    // Query key used in filter[...] (default: term)
+    protected string $termFieldName = 'term';
+
+    // Fields used in the generated where/orWhere block
+    protected array $termFields = ['login', 'name', 'email'];
+}
+```
+
+### Query Generated (Example)
+
+For PostgreSQL, `filter[term]=john` with the fields above generates a query equivalent to:
+
+```php
+$query->where(function (Builder $query) use ($term): void {
+    $query->where('login', 'ILIKE', "%{$term}%")
+        ->orWhere('name', 'ILIKE', "%{$term}%")
+        ->orWhere('email', 'ILIKE', "%{$term}%");
+});
+```
+
+### Custom Term Key
+
+```php
+class ProductController extends CrudController
+{
+    protected string $termFieldName = 'q';
+    protected array $termFields = ['name', 'sku'];
+}
+```
+
+```
+GET /products?filter[q]=galaxy
+```
 
 ## Sorting
 
