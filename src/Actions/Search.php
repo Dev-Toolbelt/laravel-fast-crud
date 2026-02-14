@@ -39,6 +39,18 @@ trait Search
     use Pageable;
 
     /**
+     * Filter key used for full-text-like term search.
+     */
+    protected string $termFieldName = 'term';
+
+    /**
+     * Model fields used when applying term search.
+     *
+     * @var array<int, string>
+     */
+    protected array $termFields = [];
+
+    /**
      * Searches and returns a paginated list of records.
      *
      * @param Request $request The HTTP request with filter, sort, and pagination parameters

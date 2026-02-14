@@ -49,6 +49,14 @@ trait Searchable
             return;
         }
 
+        $termFieldName = property_exists($this, 'termFieldName') ? $this->termFieldName : 'term';
+        $termFields = property_exists($this, 'termFields') ? $this->termFields : [];
+
+        if (array_key_exists($termFieldName, $filters)) {
+            $this->applyTermFilter($query, $filters[$termFieldName], $termFields);
+            unset($filters[$termFieldName]);
+        }
+
         foreach ($filters as $column => $param) {
             $column = Str::snake($column);
             $hasRelation = str_contains($column, '.');
@@ -291,5 +299,47 @@ trait Searchable
         }
 
         $query->where($column, $value);
+    }
+
+    /**
+     * Applies multi-column term search using LIKE/ILIKE depending on the database driver.
+     *
+     * @param Builder $query The query builder instance
+     * @param mixed $term The search term from filter[$termFieldName]
+     * @param array<int, string> $fields Columns to search against
+     */
+    private function applyTermFilter(Builder $query, mixed $term, array $fields): void
+    {
+        if (!is_scalar($term)) {
+            return;
+        }
+
+        $term = trim((string) $term);
+
+        if ($term === '' || empty($fields)) {
+            return;
+        }
+
+        $likeOperator = $this->getLikeOperator($query);
+        $normalizedFields = array_values(
+            array_filter(array_map(static fn(string $field): string => trim($field), $fields))
+        );
+
+        if (empty($normalizedFields)) {
+            return;
+        }
+
+        $query->where(function (Builder $builder) use ($normalizedFields, $likeOperator, $term): void {
+            foreach ($normalizedFields as $index => $field) {
+                $column = Str::snake($field);
+
+                if ($index === 0) {
+                    $builder->where($column, $likeOperator, "%{$term}%");
+                    continue;
+                }
+
+                $builder->orWhere($column, $likeOperator, "%{$term}%");
+            }
+        });
     }
 }
