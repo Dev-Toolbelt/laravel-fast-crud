@@ -223,6 +223,162 @@ final class SearchActionTest extends TestCase
         $this->assertSame(HttpStatusCode::ACCEPTED->value, $response->getStatusCode());
     }
 
+    public function testSearchCallsModifyFiltersHookWithRequestFilters(): void
+    {
+        $filters = ['name' => ['like' => 'Test'], 'status' => ['eq' => 'active']];
+
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+
+        $controller = new class ([], []) {
+            use Search;
+
+            public ?array $receivedFilters = null;
+            public string $modelClass = '';
+            private array $mockData;
+            private array $mockPaginationData;
+
+            public function __construct(array $data = [], array $paginationData = [])
+            {
+                $this->mockData = $data ?: [['id' => 1, 'name' => 'Test']];
+                $this->mockPaginationData = $paginationData ?: [
+                    'current' => 1,
+                    'perPage' => 40,
+                    'pagesCount' => 1,
+                    'count' => 1,
+                ];
+            }
+
+            public function setModelClass(string $class): void
+            {
+                $this->modelClass = $class;
+            }
+
+            protected function modelClassName(): string
+            {
+                return $this->modelClass;
+            }
+
+            protected function modifyFilters(array $filters): array
+            {
+                $this->receivedFilters = $filters;
+                return $filters;
+            }
+
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'success', 'data' => $data, 'meta' => $meta], $code->value);
+            }
+
+            public function buildPagination(Builder $query, int $perPage = 40, string $method = 'toArray'): void
+            {
+                $this->data = $this->mockData;
+                $this->paginationData = $this->mockPaginationData;
+            }
+        };
+
+        $controller->setModelClass($modelClass);
+        $request = $this->createRequestMock(filters: $filters);
+
+        $controller->search($request);
+
+        $this->assertSame($filters, $controller->receivedFilters);
+    }
+
+    public function testSearchUsesModifiedFiltersFromHook(): void
+    {
+        $originalFilters = ['name' => ['like' => 'Test'], 'status' => ['eq' => 'active']];
+        $modifiedFilters = [
+            'name' => ['like' => 'Test'],
+            'status' => ['eq' => 'active'],
+            'is_visible' => ['eq' => true],
+        ];
+
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+
+        $controller = new class ($modifiedFilters) {
+            use Search;
+
+            public ?array $processedFilters = null;
+            public string $modelClass = '';
+            private array $modifiedFilters;
+            private array $mockData;
+            private array $mockPaginationData;
+
+            public function __construct(array $modifiedFilters)
+            {
+                $this->modifiedFilters = $modifiedFilters;
+                $this->mockData = [['id' => 1, 'name' => 'Test']];
+                $this->mockPaginationData = [
+                    'current' => 1,
+                    'perPage' => 40,
+                    'pagesCount' => 1,
+                    'count' => 1,
+                ];
+            }
+
+            public function setModelClass(string $class): void
+            {
+                $this->modelClass = $class;
+            }
+
+            protected function modelClassName(): string
+            {
+                return $this->modelClass;
+            }
+
+            protected function modifyFilters(array $filters): array
+            {
+                return $this->modifiedFilters;
+            }
+
+            protected function processSearch(Builder $query, array $filters): void
+            {
+                $this->processedFilters = $filters;
+            }
+
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'success', 'data' => $data, 'meta' => $meta], $code->value);
+            }
+
+            public function buildPagination(Builder $query, int $perPage = 40, string $method = 'toArray'): void
+            {
+                $this->data = $this->mockData;
+                $this->paginationData = $this->mockPaginationData;
+            }
+        };
+
+        $controller->setModelClass($modelClass);
+        $request = $this->createRequestMock(filters: $originalFilters);
+
+        $controller->search($request);
+
+        $this->assertSame($modifiedFilters, $controller->processedFilters);
+    }
+
+    public function testModifyFiltersDefaultImplementationReturnsOriginalFilters(): void
+    {
+        $this->controller = $this->createController();
+        $builderMock = $this->createBuilderMock();
+        $modelClass = $this->createMockModelClass($builderMock);
+        $this->controller->setModelClass($modelClass);
+
+        $filters = ['name' => ['like' => 'Test'], 'price' => ['gte' => '100']];
+        $request = $this->createRequestMock(filters: $filters);
+
+        $this->controller->search($request);
+
+        $this->assertTrue($this->controller->answerSuccessCalled);
+    }
+
     public function testSearchUsesDefaultHttpStatusWhenNotConfigured(): void
     {
         $this->mockConfig([]);

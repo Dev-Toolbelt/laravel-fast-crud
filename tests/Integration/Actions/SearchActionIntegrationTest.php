@@ -179,6 +179,76 @@ final class SearchActionIntegrationTest extends IntegrationTestCase
         $this->assertEquals(0, $data['meta']['pagination']['count']);
     }
 
+    public function testSearchWithModifyFiltersHookAddsFilter(): void
+    {
+        Product::query()->create(['name' => 'Active Product', 'price' => 100, 'status' => 'active']);
+        Product::query()->create(['name' => 'Inactive Product', 'price' => 200, 'status' => 'inactive']);
+        Product::query()->create(['name' => 'Pending Product', 'price' => 300, 'status' => 'pending']);
+
+        $controller = new class extends ProductController {
+            protected function modifyFilters(array $filters): array
+            {
+                $filters['status'] = ['eq' => 'active'];
+                return $filters;
+            }
+        };
+
+        $request = Request::create('/', 'GET');
+
+        $response = $controller->search($request);
+        $data = $this->getResponseData($response);
+
+        $this->assertCount(1, $data['data']);
+        $this->assertEquals('Active Product', $data['data'][0]['name']);
+    }
+
+    public function testSearchWithModifyFiltersHookRemovesFilter(): void
+    {
+        Product::query()->create(['name' => 'Active', 'price' => 100, 'status' => 'active']);
+        Product::query()->create(['name' => 'Inactive', 'price' => 200, 'status' => 'inactive']);
+
+        $controller = new class extends ProductController {
+            protected function modifyFilters(array $filters): array
+            {
+                unset($filters['status']);
+                return $filters;
+            }
+        };
+
+        $request = Request::create('/', 'GET', [
+            'filter' => ['status' => ['eq' => 'active']],
+        ]);
+
+        $response = $controller->search($request);
+        $data = $this->getResponseData($response);
+
+        $this->assertCount(2, $data['data']);
+    }
+
+    public function testSearchWithModifyFiltersHookReplacesFilter(): void
+    {
+        Product::query()->create(['name' => 'Cheap', 'price' => 50, 'status' => 'active']);
+        Product::query()->create(['name' => 'Medium', 'price' => 150, 'status' => 'active']);
+        Product::query()->create(['name' => 'Expensive', 'price' => 500, 'status' => 'active']);
+
+        $controller = new class extends ProductController {
+            protected function modifyFilters(array $filters): array
+            {
+                $filters['price'] = ['gte' => '100'];
+                return $filters;
+            }
+        };
+
+        $request = Request::create('/', 'GET', [
+            'filter' => ['price' => ['lt' => '100']],
+        ]);
+
+        $response = $controller->search($request);
+        $data = $this->getResponseData($response);
+
+        $this->assertCount(2, $data['data']);
+    }
+
     public function testSearchExcludesSoftDeletedRecords(): void
     {
         Product::query()->create(['name' => 'Active', 'price' => 100]);
