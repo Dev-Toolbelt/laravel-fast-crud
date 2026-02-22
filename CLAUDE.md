@@ -40,7 +40,7 @@ Traits implementing CRUD operations:
 | **Delete** | `delete()` | `DELETE /{id}` | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
 | **SoftDelete** | `softDelete()` | `DELETE /{id}/soft` | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
 | **Restore** | `restore()` | `PATCH/PUT /{id}/restore` | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
-| **Search** | `search()` | `GET /` | `modifySearchQuery()`, `afterSearch()` |
+| **Search** | `search()` | `GET /` | `modifySearchQuery()`, `modifyFilters()`, `afterSearch()` |
 | **Options** | `options()` | `GET /options` | `modifyOptionsQuery()`, `afterOptions()` |
 | **ExportCsv** | `exportCsv()` | `GET /export-csv` | `modifyExportCsvQuery()` |
 

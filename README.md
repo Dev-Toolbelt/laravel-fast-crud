@@ -192,7 +192,7 @@ Customize behavior by overriding hooks in your controller:
 | Delete | `modifyDeleteQuery()`, `beforeDelete()`, `afterDelete()` |
 | Soft Delete | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
 | Restore | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
-| Search | `modifySearchQuery()`, `afterSearch()` |
+| Search | `modifySearchQuery()`, `modifyFilters()`, `afterSearch()` |
 | Options | `modifyOptionsQuery()`, `afterOptions()` |
 | Export CSV | `modifyExportCsvQuery()` |
 
@@ -229,6 +229,18 @@ class ProductController extends CrudController
     {
         $query->with(['category', 'brand'])
               ->where('is_active', true);
+    }
+
+    // Modify filters before they are applied to the query
+    protected function modifyFilters(array $filters): array
+    {
+        // Force a filter regardless of what the client sends
+        $filters['is_visible'] = ['eq' => true];
+
+        // Remove a filter that should not be used by the client
+        unset($filters['internal_code']);
+
+        return $filters;
     }
 
     // Provide user ID for soft delete audit

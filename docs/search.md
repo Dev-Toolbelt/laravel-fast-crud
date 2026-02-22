@@ -102,7 +102,7 @@ GET /products?skipPagination=true
 ## Lifecycle
 
 ```
-Request → modifySearchQuery() → Apply Filters → Apply Sorting → Paginate → afterSearch() → Response
+Request → modifySearchQuery() → modifyFilters() → Apply Filters → Apply Sorting → Paginate → afterSearch() → Response
 ```
 
 ## Hooks
@@ -128,6 +128,65 @@ protected function modifySearchQuery(Builder $query): void
 
     // Select specific columns
     $query->select(['id', 'name', 'price', 'category_id', 'created_at']);
+}
+```
+
+### modifyFilters(array $filters): array
+
+Modify the request filters before they are applied to the query. Receives the original filters and must return a new array of filters. The original request filters are not mutated (immutability).
+
+Use this to add mandatory filters, remove filters that clients should not control, or transform filter values.
+
+```php
+protected function modifyFilters(array $filters): array
+{
+    // Force a filter regardless of what the client sends
+    $filters['is_active'] = ['eq' => true];
+
+    // Remove a filter that should not be exposed to the client
+    unset($filters['internal_code']);
+
+    return $filters;
+}
+```
+
+#### Use Cases
+
+**Enforce tenant isolation:**
+
+```php
+protected function modifyFilters(array $filters): array
+{
+    $filters['store_id'] = ['eq' => auth()->user()->store_id];
+    return $filters;
+}
+```
+
+**Normalize filter values:**
+
+```php
+protected function modifyFilters(array $filters): array
+{
+    // Ensure status filter is always lowercase
+    if (isset($filters['status']['eq'])) {
+        $filters['status']['eq'] = strtolower($filters['status']['eq']);
+    }
+
+    return $filters;
+}
+```
+
+**Add default filters when none are provided:**
+
+```php
+protected function modifyFilters(array $filters): array
+{
+    // Default to only active records if no status filter is sent
+    if (!isset($filters['status'])) {
+        $filters['status'] = ['eq' => 'active'];
+    }
+
+    return $filters;
 }
 ```
 
@@ -271,6 +330,19 @@ class ProductController extends CrudController
             'id', 'name', 'slug', 'price', 'sale_price',
             'category_id', 'brand_id', 'stock', 'created_at'
         ]);
+    }
+
+    protected function modifyFilters(array $filters): array
+    {
+        // Always filter by the user's store (multi-tenant)
+        if (auth()->check() && !auth()->user()->isAdmin()) {
+            $filters['store_id'] = ['eq' => auth()->user()->store_id];
+        }
+
+        // Prevent clients from filtering by internal fields
+        unset($filters['cost_price'], $filters['supplier_id']);
+
+        return $filters;
     }
 
     protected function afterSearch(array $data): void
