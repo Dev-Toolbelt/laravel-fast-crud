@@ -76,7 +76,8 @@ trait Search
         $query = $modelName::query();
 
         $this->modifySearchQuery($query);
-        $this->processSearch($query, $request->get('filter', []));
+        $filters = $this->modifyFilters($request->get('filter', []));
+        $this->processSearch($query, $filters);
         $this->processSort($query, $request->input('sort', ''));
 
         $this->buildPagination($query, $perPage, $method);
@@ -106,6 +107,30 @@ trait Search
      */
     protected function modifySearchQuery(Builder $query): void
     {
+    }
+
+    /**
+     * Hook to modify the filters before they are applied to the query.
+     *
+     * Override this method to add, remove, or transform filters
+     * before they are processed by the search engine.
+     *
+     * @param array<string, mixed> $filters The original filters from the request
+     * @return array<string, mixed> The modified filters
+     *
+     * @example
+     * ```php
+     * protected function modifyFilters(array $filters): array
+     * {
+     *     $filters['is_active'] = ['eq' => true];
+     *     unset($filters['internal_field']);
+     *     return $filters;
+     * }
+     * ```
+     */
+    protected function modifyFilters(array $filters): array
+    {
+        return $filters;
     }
 
     /**
