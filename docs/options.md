@@ -70,23 +70,42 @@ use DevToolbelt\Enums\Http\HttpStatusCode;
 ## Lifecycle
 
 ```
-Request → Validate Parameters → Validate Columns → modifyOptionsQuery() → Fetch → Format → afterOptions() → Response
+Request → Validate Parameters → Validate Columns → Filter Soft Deleted → modifyOptionsQuery() → Fetch → Format → afterOptions() → Response
 ```
 
 ## Hooks
 
-### modifyOptionsQuery(Builder $query)
+### Automatic Soft Delete Filtering
+
+The options action automatically excludes soft-deleted records. If the model has a `deleted_at` column (or a custom column configured via `soft_delete.deleted_at_field`), a `whereNull` condition is applied before fetching options.
+
+This means you **don't need** to manually add `whereNull('deleted_at')` in `modifyOptionsQuery()` — it's handled automatically.
+
+The field name is configurable:
+
+```php
+// config/fast-crud.php
+'soft_delete' => [
+    'deleted_at_field' => 'deleted_at', // Change to 'removed_at', etc.
+],
+```
+
+If the model does **not** have the soft delete column, no filtering is applied.
+
+### modifyOptionsQuery(Builder|QueryBuilder $query)
 
 Modify the query before fetching options. Use this for filtering and ordering.
 
+> **Note:** The query uses the raw query builder (`DB::table()`) instead of Eloquent, so the parameter type is `Builder|QueryBuilder`.
+
 ```php
-protected function modifyOptionsQuery(Builder $query): void
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+
+protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
 {
     // Only active items
     $query->where('is_active', true);
-
-    // Exclude soft deleted
-    $query->whereNull('deleted_at');
 
     // Scope to current user's store
     $query->where('store_id', auth()->user()->store_id);
@@ -187,6 +206,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use DevToolbelt\LaravelFastCrud\CrudController;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends CrudController
@@ -196,11 +216,10 @@ class CategoryController extends CrudController
         return Category::class;
     }
 
-    protected function modifyOptionsQuery(Builder $query): void
+    protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
     {
-        // Only show active categories
-        $query->where('is_active', true)
-              ->whereNull('deleted_at');
+        // Only show active categories (soft delete is already filtered automatically)
+        $query->where('is_active', true);
 
         // Order by name for better UX
         $query->orderBy('name', 'asc');
@@ -311,7 +330,10 @@ GET /categories/options?label=name&parent_id=5
 Handle in controller:
 
 ```php
-protected function modifyOptionsQuery(Builder $query): void
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+
+protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
 {
     if (request()->has('parent_id')) {
         $query->where('parent_id', request()->input('parent_id'));
@@ -354,7 +376,10 @@ For large datasets, consider:
 3. **Selecting only needed columns** (already done by the action)
 
 ```php
-protected function modifyOptionsQuery(Builder $query): void
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+
+protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
 {
     // Limit to prevent huge payloads
     $query->limit(100);

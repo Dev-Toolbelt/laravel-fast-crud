@@ -7,8 +7,10 @@ namespace DevToolbelt\LaravelFastCrud\Actions;
 use DevToolbelt\Enums\Http\HttpStatusCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -51,6 +53,8 @@ trait Options
         );
 
         $defaultValue = config('devToolbelt.fast-crud.options.default_value', 'id');
+        $deletedAtField = config('devToolbelt.fast-crud.soft_delete.deleted_at_field', 'deleted_at');
+
         $value = $request->get('value', $defaultValue);
         $label = $request->get('label');
 
@@ -67,18 +71,26 @@ trait Options
             return $this->answerColumnNotFound($label, $validationHttpStatus);
         }
 
-        $query = $model->newQuery()
+        $table = $model->getTable();
+        $connection = $model->getConnectionName();
+
+        $query = DB::connection($connection)
+            ->table($table)
             ->select([$value . ' as value', $label . ' as label'])
             ->orderBy($label, 'ASC');
 
+        if ($this->hasModelAttribute($model, $deletedAtField)) {
+            $query->whereNull($deletedAtField);
+        }
+
         $this->modifyOptionsQuery($query);
 
-        $records = $query->get()->toArray();
-
-        $rows = array_map(static fn(array $record): array => [
-            'label' => $record['label'],
-            'value' => $record['value'],
-        ], $records);
+        $rows = $query->get()
+            ->map(static fn(object $record): array => [
+                'label' => $record->label,
+                'value' => $record->value,
+            ])
+            ->all();
 
         $this->afterOptions($rows);
 
@@ -91,17 +103,17 @@ trait Options
      * Override this method to add conditions, such as filtering
      * only active records or scoping to a specific user.
      *
-     * @param Builder $query The query builder instance
+     * @param Builder|QueryBuilder $query The query builder instance
      *
      * @example
      * ```php
-     * protected function modifyOptionsQuery(Builder $query): void
+     * protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
      * {
      *     $query->where('is_active', true);
      * }
      * ```
      */
-    protected function modifyOptionsQuery(Builder $query): void
+    protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
     {
     }
 

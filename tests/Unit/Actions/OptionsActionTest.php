@@ -9,8 +9,10 @@ use DevToolbelt\LaravelFastCrud\Actions\Options;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Mockery;
 use Psr\Http\Message\ResponseInterface;
 
@@ -26,7 +28,7 @@ final class OptionsActionTest extends TestCase
         $this->controller = new class {
             use Options;
 
-            public ?Builder $modifiedQuery = null;
+            public ?QueryBuilder $modifiedQuery = null;
             public array $afterOptionsData = [];
             public bool $answerRequiredCalled = false;
             public ?HttpStatusCode $requiredStatusCode = null;
@@ -48,7 +50,7 @@ final class OptionsActionTest extends TestCase
                 return $this->modelClass;
             }
 
-            protected function modifyOptionsQuery(Builder $query): void
+            protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
             {
                 $this->modifiedQuery = $query;
             }
@@ -60,7 +62,7 @@ final class OptionsActionTest extends TestCase
 
             public function hasModelAttribute(Model $model, string $attributeName): bool
             {
-                return in_array($attributeName, ['name', 'title', 'external_id', 'id']);
+                return in_array($attributeName, ['name', 'title', 'external_id', 'id', 'deleted_at']);
             }
 
             protected function answerRequired(
@@ -109,15 +111,11 @@ final class OptionsActionTest extends TestCase
 
     public function testOptionsReturnsColumnNotFoundForInvalidLabel(): void
     {
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
-        $this->controller->setModelClass($modelClass);
-
-        // Override hasModelAttribute to return false for invalid column
+        $modelClass = $this->createMockModelClass();
         $this->controller = new class {
             use Options;
 
-            public ?Builder $modifiedQuery = null;
+            public ?QueryBuilder $modifiedQuery = null;
             public bool $answerColumnNotFoundCalled = false;
             public string $columnNotFoundField = '';
             public string $modelClass = '';
@@ -132,7 +130,7 @@ final class OptionsActionTest extends TestCase
                 return $this->modelClass;
             }
 
-            protected function modifyOptionsQuery(Builder $query): void
+            protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
             {
                 $this->modifiedQuery = $query;
             }
@@ -164,7 +162,6 @@ final class OptionsActionTest extends TestCase
             }
         };
 
-        $modelClass = $this->createMockModelClass($modelMock);
         $this->controller->setModelClass($modelClass);
 
         $request = Mockery::mock(Request::class);
@@ -179,9 +176,9 @@ final class OptionsActionTest extends TestCase
 
     public function testModifyOptionsQueryHookIsCalled(): void
     {
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -194,9 +191,9 @@ final class OptionsActionTest extends TestCase
 
     public function testAfterOptionsHookIsCalled(): void
     {
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -209,9 +206,9 @@ final class OptionsActionTest extends TestCase
 
     public function testOptionsReturnsSuccessResponse(): void
     {
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -225,9 +222,9 @@ final class OptionsActionTest extends TestCase
 
     public function testOptionsReturnsFormattedLabelValuePairs(): void
     {
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -246,9 +243,9 @@ final class OptionsActionTest extends TestCase
             'devToolbelt.fast-crud.options.http_status' => HttpStatusCode::ACCEPTED->value,
         ]);
 
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -264,9 +261,9 @@ final class OptionsActionTest extends TestCase
     {
         $this->mockConfig([]);
 
-        $modelMock = $this->createModelMock();
-        $modelClass = $this->createMockModelClass($modelMock);
+        $modelClass = $this->createMockModelClass();
         $this->controller->setModelClass($modelClass);
+        $this->mockDbFacade();
 
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
@@ -310,29 +307,191 @@ final class OptionsActionTest extends TestCase
         $this->assertSame(HttpStatusCode::BAD_REQUEST->value, $response->getStatusCode());
     }
 
-    private function createModelMock(): Model
+    public function testOptionsFiltersSoftDeletedRecords(): void
     {
-        $modelMock = Mockery::mock(Model::class);
-        $modelMock->shouldReceive('getFillable')->andReturn(['name', 'title']);
-        $modelMock->shouldReceive('getGuarded')->andReturn([]);
-        $modelMock->shouldReceive('getOriginal')->andReturn([]);
-        $modelMock->shouldReceive('getCasts')->andReturn([]);
-        $modelMock->shouldReceive('getAppends')->andReturn([]);
+        $modelClass = $this->createMockModelClass();
+        $this->controller->setModelClass($modelClass);
+        $queryBuilderMock = $this->mockDbFacade(withWhereNull: false);
 
-        $builderMock = Mockery::mock(Builder::class);
-        $builderMock->shouldReceive('select')->andReturnSelf();
-        $builderMock->shouldReceive('orderBy')->andReturnSelf();
-        $builderMock->shouldReceive('get')->andReturn(collect([
-            ['label' => 'Option 1', 'value' => '1'],
-            ['label' => 'Option 2', 'value' => '2'],
-        ]));
+        $queryBuilderMock->shouldReceive('whereNull')
+            ->with('deleted_at')
+            ->once()
+            ->andReturnSelf();
 
-        $modelMock->shouldReceive('newQuery')->andReturn($builderMock);
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn('name');
 
-        return $modelMock;
+        $this->controller->options($request);
+
+        $this->assertTrue($this->controller->answerSuccessCalled);
     }
 
-    private function createMockModelClass(Model $modelMock): string
+    public function testOptionsDoesNotFilterSoftDeleteWhenModelLacksDeletedAt(): void
+    {
+        $modelClass = $this->createMockModelClass();
+
+        // Controller where hasModelAttribute returns false for deleted_at
+        $this->controller = new class {
+            use Options;
+
+            public ?QueryBuilder $modifiedQuery = null;
+            public array $afterOptionsData = [];
+            public bool $answerSuccessCalled = false;
+            public array $responseData = [];
+            public string $modelClass = '';
+
+            public function setModelClass(string $class): void
+            {
+                $this->modelClass = $class;
+            }
+
+            protected function modelClassName(): string
+            {
+                return $this->modelClass;
+            }
+
+            protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
+            {
+                $this->modifiedQuery = $query;
+            }
+
+            protected function afterOptions(array $rows): void
+            {
+                $this->afterOptionsData = $rows;
+            }
+
+            public function hasModelAttribute(Model $model, string $attributeName): bool
+            {
+                // Has label/value columns but NOT deleted_at
+                return in_array($attributeName, ['name', 'title', 'external_id', 'id']);
+            }
+
+            protected function answerRequired(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'fail', 'message' => "$field is required"], $code->value);
+            }
+
+            protected function answerColumnNotFound(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'fail', 'message' => "Column $field not found"], $code->value);
+            }
+
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
+                $this->answerSuccessCalled = true;
+                $this->responseData = $data;
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
+            }
+        };
+
+        $this->controller->setModelClass($modelClass);
+        $queryBuilderMock = $this->mockDbFacade();
+
+        // whereNull should NOT be called since model lacks deleted_at
+        $queryBuilderMock->shouldNotReceive('whereNull');
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn('name');
+
+        $this->controller->options($request);
+
+        $this->assertTrue($this->controller->answerSuccessCalled);
+    }
+
+    public function testOptionsUsesCustomDeletedAtFieldFromConfig(): void
+    {
+        $this->mockConfig([
+            'devToolbelt.fast-crud.soft_delete.deleted_at_field' => 'removed_at',
+        ]);
+
+        // Controller where hasModelAttribute returns true for removed_at
+        $this->controller = new class {
+            use Options;
+
+            public ?QueryBuilder $modifiedQuery = null;
+            public array $afterOptionsData = [];
+            public bool $answerSuccessCalled = false;
+            public array $responseData = [];
+            public string $modelClass = '';
+
+            public function setModelClass(string $class): void
+            {
+                $this->modelClass = $class;
+            }
+
+            protected function modelClassName(): string
+            {
+                return $this->modelClass;
+            }
+
+            protected function modifyOptionsQuery(Builder|QueryBuilder $query): void
+            {
+                $this->modifiedQuery = $query;
+            }
+
+            protected function afterOptions(array $rows): void
+            {
+                $this->afterOptionsData = $rows;
+            }
+
+            public function hasModelAttribute(Model $model, string $attributeName): bool
+            {
+                return in_array($attributeName, ['name', 'title', 'id', 'removed_at']);
+            }
+
+            protected function answerRequired(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'fail', 'message' => "$field is required"], $code->value);
+            }
+
+            protected function answerColumnNotFound(
+                string $field,
+                HttpStatusCode $code = HttpStatusCode::BAD_REQUEST
+            ): JsonResponse|ResponseInterface {
+                return new JsonResponse(['status' => 'fail', 'message' => "Column $field not found"], $code->value);
+            }
+
+            protected function answerSuccess(
+                mixed $data,
+                HttpStatusCode $code = HttpStatusCode::OK,
+                array $meta = []
+            ): JsonResponse|ResponseInterface {
+                $this->answerSuccessCalled = true;
+                $this->responseData = $data;
+                return new JsonResponse(['status' => 'success', 'data' => $data], $code->value);
+            }
+        };
+
+        $modelClass = $this->createMockModelClass();
+        $this->controller->setModelClass($modelClass);
+        $queryBuilderMock = $this->mockDbFacade(withWhereNull: false);
+
+        $queryBuilderMock->shouldReceive('whereNull')
+            ->with('removed_at')
+            ->once()
+            ->andReturnSelf();
+
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('get')->with('value', 'id')->andReturn('id');
+        $request->shouldReceive('get')->with('label')->andReturn('name');
+
+        $this->controller->options($request);
+
+        $this->assertTrue($this->controller->answerSuccessCalled);
+    }
+
+    private function createMockModelClass(): string
     {
         $className = 'TestOptionsModel' . uniqid();
 
@@ -340,21 +499,16 @@ final class OptionsActionTest extends TestCase
             namespace DevToolbelt\\LaravelFastCrud\\Tests\\Unit\\Actions;
 
             class {$className} extends \\Illuminate\\Database\\Eloquent\\Model {
-                public static \$modelInstance;
-
                 public function __construct() {
                     // Don't call parent
                 }
 
-                public function newQuery() {
-                    \$builderMock = \\Mockery::mock(\\Illuminate\\Database\\Eloquent\\Builder::class);
-                    \$builderMock->shouldReceive('select')->andReturnSelf();
-                    \$builderMock->shouldReceive('orderBy')->andReturnSelf();
-                    \$builderMock->shouldReceive('get')->andReturn(collect([
-                        ['label' => 'Option 1', 'value' => '1'],
-                        ['label' => 'Option 2', 'value' => '2'],
-                    ]));
-                    return \$builderMock;
+                public function getTable() {
+                    return 'test_table';
+                }
+
+                public function getConnectionName() {
+                    return 'testing';
                 }
 
                 public function getFillable() {
@@ -379,10 +533,42 @@ final class OptionsActionTest extends TestCase
             }
         ");
 
-        $fullClassName = "DevToolbelt\\LaravelFastCrud\\Tests\\Unit\\Actions\\{$className}";
-        $fullClassName::$modelInstance = $modelMock;
+        return "DevToolbelt\\LaravelFastCrud\\Tests\\Unit\\Actions\\{$className}";
+    }
 
-        return $fullClassName;
+    private function mockDbFacade(bool $withWhereNull = true): QueryBuilder
+    {
+        $queryBuilderMock = Mockery::mock(QueryBuilder::class);
+        $queryBuilderMock->shouldReceive('select')->andReturnSelf();
+        $queryBuilderMock->shouldReceive('orderBy')->andReturnSelf();
+
+        if ($withWhereNull) {
+            $queryBuilderMock->shouldReceive('whereNull')->andReturnSelf();
+        }
+
+        $queryBuilderMock->shouldReceive('get')->andReturn(collect([
+            (object) ['label' => 'Option 1', 'value' => '1'],
+            (object) ['label' => 'Option 2', 'value' => '2'],
+        ]));
+
+        $connectionMock = Mockery::mock(\Illuminate\Database\Connection::class);
+        $connectionMock->shouldReceive('table')->andReturn($queryBuilderMock);
+
+        DB::swap(new class ($connectionMock) {
+            private $connectionMock;
+
+            public function __construct($connectionMock)
+            {
+                $this->connectionMock = $connectionMock;
+            }
+
+            public function connection($name = null)
+            {
+                return $this->connectionMock;
+            }
+        });
+
+        return $queryBuilderMock;
     }
 
     private function mockConfig(array $overrides = []): void
