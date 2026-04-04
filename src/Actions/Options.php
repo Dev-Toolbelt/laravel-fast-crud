@@ -26,7 +26,8 @@ use Psr\Http\Message\ResponseInterface;
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerRequired(string $field, HttpStatusCode $code) Required field error
  * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
- * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = []) Returns success response
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = [])
+ *         Returns success response
  */
 trait Options
 {

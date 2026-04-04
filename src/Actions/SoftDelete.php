@@ -20,9 +20,11 @@ use Psr\Http\Message\ResponseInterface;
  * @method string modelClassName() Returns the Eloquent model class name
  * @method bool hasModelAttribute(Model $model, string $attributeName) Checks if model has attribute
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
- * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code) Returns not found error response
+ * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code = HttpStatusCode::NOT_FOUND)
+ *         Returns not found error response
  * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
- * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
+ * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code = HttpStatusCode::OK)
+ *         Returns No Content response
  */
 trait SoftDelete
 {
