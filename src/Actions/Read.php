@@ -18,8 +18,8 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
- * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
- * @method JsonResponse|ResponseInterface answerSuccess(array $data, array $meta = []) Returns success response
+ * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code) Returns not found error response
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = []) Returns success response
  */
 trait Read
 {

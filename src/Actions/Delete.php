@@ -21,7 +21,7 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
- * @method JsonResponse|ResponseInterface answerRecordNotFound() Returns not found error response
+ * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code) Returns not found error response
  * @method JsonResponse|ResponseInterface answerNoContent(HttpStatusCode $code) Returns No Content response
  * @method JsonResponse|ResponseInterface softDelete(string $id) Soft deletes a record (from SoftDelete trait)
  */
