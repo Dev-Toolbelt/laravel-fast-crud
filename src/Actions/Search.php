@@ -26,7 +26,8 @@ use Psr\Http\Message\ResponseInterface;
  * - skipPagination=true - Return all records without pagination
  *
  * @method string modelClassName() Returns the Eloquent model class name
- * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = []) Returns success response
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = [])
+ *         Returns success response
  *
  * @property array $data Paginated records data (from Pageable trait)
  * @property array $paginationData Pagination metadata (from Pageable trait)

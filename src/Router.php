@@ -62,7 +62,8 @@ final class Router extends Route
      *
      * @param string $uri Base URI for the resource (e.g., 'products', 'api/v1/users')
      * @param class-string $controllerName Fully qualified controller class name
-     * @param string|null $moduleName Module name used for permission middleware (e.g., 'products'). If null, no permission middleware is applied
+     * @param string|null $moduleName Module name for permission middleware (e.g., 'products').
+     *        If null, no permission middleware is applied
      * @param array<int, string> $except Action methods to exclude (e.g., ['delete', 'exportCsv'])
      * @param array<int, string> $only If provided, only these action methods will be registered
      */

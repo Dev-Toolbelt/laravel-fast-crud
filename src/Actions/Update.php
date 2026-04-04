@@ -29,8 +29,10 @@ use Psr\Http\Message\ResponseInterface;
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerInvalidUuid(HttpStatusCode $code) Returns invalid UUID error response
  * @method JsonResponse|ResponseInterface answerEmptyPayload(HttpStatusCode $code) Returns empty payload error response
- * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code) Returns not found error response
- * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = []) Returns success response
+ * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code = HttpStatusCode::NOT_FOUND)
+ *         Returns not found error response
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = [])
+ *         Returns success response
  * @method JsonResponse|ResponseInterface|null runValidation(array $data, array $rules)
  *         Validates data and returns error response if fails, null if passes
  */

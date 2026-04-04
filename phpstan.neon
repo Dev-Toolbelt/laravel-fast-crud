@@ -10,8 +10,6 @@ parameters:
   ignoreErrors:
     # Laravel Builder generic type - common in Laravel packages
     - identifier: missingType.generics
-    # AnswerTrait from jsend-payload has default parameters
-    - '#Missing parameter .+ in call to method .+::answerSuccess\(\)#'
     # Laravel Connection interface vs concrete class
     - '#Call to an undefined method Illuminate\\Database\\ConnectionInterface::getDriverName\(\)#'
     # Anonymous function return type with Builder
