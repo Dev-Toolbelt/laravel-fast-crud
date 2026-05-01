@@ -29,11 +29,11 @@ final class Router extends Route
     /**
      * Default CRUD action definitions.
      *
-     * @var array<int, array{verb: string, path: string, method: string, permission: string}>
+     * @var array<int, array{verb: string, path: string, method: string, permission: string|null}>
      */
     private const CRUD_ACTIONS = [
         ['verb' => 'get', 'path' => '', 'method' => 'search', 'permission' => 'search'],
-        ['verb' => 'get', 'path' => '/options', 'method' => 'options', 'permission' => 'search'],
+        ['verb' => 'get', 'path' => '/options', 'method' => 'options', 'permission' => null],
         ['verb' => 'post', 'path' => '', 'method' => 'create', 'permission' => 'create'],
         ['verb' => 'get', 'path' => '/export-csv', 'method' => 'exportCsv', 'permission' => 'exportCsv'],
         ['verb' => 'get', 'path' => '/{id:uuid}', 'method' => 'read', 'permission' => 'view'],
@@ -51,7 +51,7 @@ final class Router extends Route
      *
      * Generates the following routes:
      * - GET /{uri} -> search() with {module}.access.search permission
-     * - GET /{uri}/options -> options() with {module}.access.search permission
+     * - GET /{uri}/options -> options() (no permission required)
      * - POST /{uri} -> create() with {module}.access.create permission
      * - GET /{uri}/export-csv -> exportCsv() with {module}.access.exportCsv permission
      * - GET /{uri}/{id:uuid} -> read() with {module}.access.view permission
@@ -90,7 +90,7 @@ final class Router extends Route
 
             $route = static::$verb($path, "{$controllerName}@{$method}");
 
-            if ($moduleName !== null) {
+            if ($moduleName !== null && $permission !== null) {
                 $route->middleware("can:{$moduleName}.access.{$permission}");
             }
         }

@@ -26,7 +26,7 @@ composer phpstan           # Run static analysis (level 6)
 
 **CrudController** (`src/CrudController.php`) - Abstract base controller composing all CRUD traits. Subclasses implement `modelClassName(): string` to specify the Eloquent model.
 
-**Router** (`src/Router.php`) - Static helper `Router::crud($uri, $controller, $module)` auto-generates RESTful routes with permission middleware.
+**Router** (`src/Router.php`) - Static helper `Router::crud($uri, $controller, $module)` auto-generates RESTful routes with permission middleware. The `options` route is exempt and has no permission middleware.
 
 ### Actions (src/Actions/)
 
@@ -41,7 +41,7 @@ Traits implementing CRUD operations:
 | **SoftDelete** | `softDelete()` | `DELETE /{id}/soft` | `modifySoftDeleteQuery()`, `beforeSoftDelete()`, `afterSoftDelete()`, `getSoftDeleteUserId()` |
 | **Restore** | `restore()` | `PATCH/PUT /{id}/restore` | `modifyRestoreQuery()`, `beforeRestore()`, `afterRestore()` |
 | **Search** | `search()` | `GET /` | `modifySearchQuery()`, `modifyFilters()`, `afterSearch()` |
-| **Options** | `options()` | `GET /options` | `modifyOptionsQuery()`, `afterOptions()` |
+| **Options** | `options()` | `GET /options` (no permission) | `modifyOptionsQuery()`, `afterOptions()` |
 | **ExportCsv** | `exportCsv()` | `GET /export-csv` | `modifyExportCsvQuery()` |
 
 ### Traits (src/Traits/)

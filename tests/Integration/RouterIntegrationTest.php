@@ -91,13 +91,13 @@ final class RouterIntegrationTest extends IntegrationTestCase
     {
         Router::crud('test-products', ProductController::class, 'test-products');
 
-        // Test search route
+        // Test search route (may return 403 without a valid authenticated user + permission)
         $response = $this->get('/test-products');
-        $this->assertContains($response->status(), [200, 403, 404]); // 403 if no permission, 404 if no route
-
-        // Test options route
-        $response = $this->get('/test-products/options?label=name');
         $this->assertContains($response->status(), [200, 403, 404]);
+
+        // Options route has no permission middleware, so it must never return 403
+        $response = $this->get('/test-products/options?label=name');
+        $this->assertNotSame(403, $response->status());
     }
 
     public function testRouterAppliesMiddleware(): void
@@ -112,5 +112,49 @@ final class RouterIntegrationTest extends IntegrationTestCase
 
         // The route should have the permission middleware
         $this->assertNotNull($searchRoute);
+    }
+
+    public function testOptionsRouteHasNoPermissionMiddleware(): void
+    {
+        Router::crud('secured2', ProductController::class, 'secured2');
+
+        $routes = Route::getRoutes();
+
+        $optionsRoute = collect($routes->getRoutes())->first(
+            fn($r) => str_contains($r->uri, 'secured2') && $r->getActionMethod() === 'options'
+        );
+
+        $this->assertNotNull($optionsRoute);
+
+        $canMiddleware = array_filter(
+            $optionsRoute->middleware(),
+            static fn(string $m): bool => str_starts_with($m, 'can:')
+        );
+
+        $this->assertEmpty($canMiddleware);
+    }
+
+    public function testSearchRouteHasPermissionMiddlewareButOptionsDoesNot(): void
+    {
+        Router::crud('secured3', ProductController::class, 'secured3');
+
+        $routes = Route::getRoutes();
+
+        $searchRoute = collect($routes->getRoutes())->first(
+            fn($r) => str_contains($r->uri, 'secured3') && $r->getActionMethod() === 'search'
+        );
+        $optionsRoute = collect($routes->getRoutes())->first(
+            fn($r) => str_contains($r->uri, 'secured3') && $r->getActionMethod() === 'options'
+        );
+
+        $this->assertNotNull($searchRoute);
+        $this->assertContains('can:secured3.access.search', $searchRoute->middleware());
+
+        $this->assertNotNull($optionsRoute);
+        $canMiddleware = array_filter(
+            $optionsRoute->middleware(),
+            static fn(string $m): bool => str_starts_with($m, 'can:')
+        );
+        $this->assertEmpty($canMiddleware);
     }
 }

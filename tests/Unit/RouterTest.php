@@ -6,6 +6,7 @@ namespace DevToolbelt\LaravelFastCrud\Tests\Unit;
 
 use DevToolbelt\LaravelFastCrud\Router;
 use DevToolbelt\LaravelFastCrud\Tests\TestCase;
+use DevToolbelt\LaravelFastCrud\Tests\Integration\Fixtures\ProductController;
 use DevToolbelt\LaravelFastCrud\Tests\Unit\Fixtures\RouterTestController;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
@@ -98,6 +99,57 @@ final class RouterTest extends TestCase
         $this->assertSame('delete', $permissions['softDelete']);
         $this->assertSame('restore', $permissions['restore']);
         $this->assertSame('exportCsv', $permissions['exportCsv']);
+        $this->assertNull($permissions['options']);
+    }
+
+    public function testOptionsActionHasNullPermission(): void
+    {
+        $reflection = new \ReflectionClass(Router::class);
+        $constant = $reflection->getConstant('CRUD_ACTIONS');
+
+        $optionsAction = null;
+        foreach ($constant as $action) {
+            if ($action['method'] === 'options') {
+                $optionsAction = $action;
+                break;
+            }
+        }
+
+        $this->assertNotNull($optionsAction);
+        $this->assertNull($optionsAction['permission']);
+    }
+
+    public function testOptionsRouteDoesNotGetMiddlewareEvenWithModuleName(): void
+    {
+        $previousApp = Facade::getFacadeApplication();
+
+        $container = new Container();
+        $container->instance('app', $container);
+        $container->instance('router', new IlluminateRouter(new Dispatcher($container), $container));
+        Facade::setFacadeApplication($container);
+
+        Router::crud('guarded', ProductController::class, 'guarded');
+
+        $routes = RouteFacade::getRoutes()->getRoutes();
+
+        $searchRoute = collect($routes)->first(
+            static fn($r): bool => str_contains($r->uri(), 'guarded') && $r->getActionMethod() === 'search'
+        );
+        $optionsRoute = collect($routes)->first(
+            static fn($r): bool => str_contains($r->uri(), 'guarded') && $r->getActionMethod() === 'options'
+        );
+
+        $this->assertNotNull($searchRoute);
+        $this->assertContains('can:guarded.access.search', $searchRoute->middleware());
+
+        $this->assertNotNull($optionsRoute);
+        $canMiddleware = array_filter(
+            $optionsRoute->middleware(),
+            static fn(string $m): bool => str_starts_with($m, 'can:')
+        );
+        $this->assertEmpty($canMiddleware);
+
+        Facade::setFacadeApplication($previousApp);
     }
 
     public function testCrudActionsHasCorrectVerbs(): void

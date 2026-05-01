@@ -74,17 +74,22 @@ That's it! You now have a complete CRUD API.
 
 ## Available Actions
 
-| Action | Method | Route | Description |
-|--------|--------|-------|-------------|
-| Search | `GET` | `/products` | List with filtering, sorting, pagination |
-| Create | `POST` | `/products` | Create a new record |
-| Read | `GET` | `/products/{id}` | Get a single record |
-| Update | `PUT/PATCH` | `/products/{id}` | Update a record |
-| Delete | `DELETE` | `/products/{id}` | Permanently delete a record |
-| Soft Delete | `DELETE` | `/products/{id}/soft` | Soft delete with audit |
-| Restore | `PATCH/PUT` | `/products/{id}/restore` | Restore a soft deleted record |
-| Options | `GET` | `/products/options` | Label-value pairs for HTML selects |
-| Export CSV | `GET` | `/products/export-csv` | Export filtered data to CSV |
+| Action | Method | Route | Permission | Description |
+|--------|--------|-------|------------|-------------|
+| Search | `GET` | `/products` | `{module}.access.search` | List with filtering, sorting, pagination |
+| Create | `POST` | `/products` | `{module}.access.create` | Create a new record |
+| Read | `GET` | `/products/{id}` | `{module}.access.view` | Get a single record |
+| Update | `PUT/PATCH` | `/products/{id}` | `{module}.access.update` | Update a record |
+| Delete | `DELETE` | `/products/{id}` | `{module}.access.delete` | Permanently delete a record |
+| Soft Delete | `DELETE` | `/products/{id}/soft` | `{module}.access.delete` | Soft delete with audit |
+| Restore | `PATCH/PUT` | `/products/{id}/restore` | `{module}.access.restore` | Restore a soft deleted record |
+| Options | `GET` | `/products/options` | **none** | Label-value pairs for HTML selects |
+| Export CSV | `GET` | `/products/export-csv` | `{module}.access.exportCsv` | Export filtered data to CSV |
+
+> **Note:** The `Options` route (`GET /options`) has no permission middleware and is always publicly
+> accessible (subject to any other middleware applied to the surrounding route group). This makes it
+> easy to populate HTML `<select>` fields and dropdowns without requiring the user to have explicit
+> permissions.
 
 ## Search Operators
 
