@@ -332,15 +332,15 @@ return [
 
     // Per-action settings (override global)
     'create' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize the record in the response
         'http_status' => HttpStatusCode::CREATED->value, // 201
     ],
     'read' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize the record in the response
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
     'update' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize the record in the response
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
     'delete' => [
@@ -352,11 +352,11 @@ return [
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
     'restore' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize the record in the response
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
     'search' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize each record in the response
         'per_page' => 40,
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
@@ -365,7 +365,7 @@ return [
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
     'export_csv' => [
-        'method' => 'toArray',
+        'method' => 'toArray',          // Model method called to serialize each record before export
         'http_status' => HttpStatusCode::OK->value, // 200
     ],
 ];
