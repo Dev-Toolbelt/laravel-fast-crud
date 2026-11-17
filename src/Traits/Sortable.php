@@ -50,12 +50,12 @@ trait Sortable
 
             if (str_starts_with($column, '-')) {
                 $columnName = Str::snake(substr($column, 1));
-                $query->orderBy($columnName, 'DESC');
+                $query->orderBy($columnName, 'desc');
                 continue;
             }
 
             $columnName = Str::snake($column);
-            $query->orderBy($columnName, 'ASC');
+            $query->orderBy($columnName, 'asc');
         }
     }
 }

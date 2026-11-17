@@ -16,7 +16,7 @@ use Psr\Http\Message\ResponseInterface;
  * - hasModelAttribute(): Check if a model has a specific attribute
  * - runValidation(): Validate data using Laravel validation rules
  *
- * @method JsonResponse|ResponseInterface answerFail(array $data) Returns JSend fail response
+ * @method JsonResponse|ResponseInterface answerFail(array<mixed> $data) Returns JSend fail response
  */
 trait Helpers
 {

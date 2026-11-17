@@ -11,7 +11,7 @@ A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTfu
 
 ## Features
 
-- Works exclusively with Laravel 11+
+- Works with Laravel 11, 12 and 13
 - 9 pre-built actions (Create, Read, Update, Delete, Soft Delete, Restore, Search, Options, Export CSV)
 - 14+ search operators for flexible filtering (eq, like, between, in, json, etc.)
 - Multi-field term search via `filter[term]` with database-aware `LIKE`/`ILIKE`
@@ -26,7 +26,7 @@ A powerful Laravel package for rapid CRUD API scaffolding. Build complete RESTfu
 ## Requirements
 
 - PHP ^8.2
-- Laravel ^11.0
+- Laravel 11, 12 or 13 (`^11.0|^12.0|^13.0`)
 
 ## Installation
 

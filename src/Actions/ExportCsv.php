@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * @method string modelClassName() Returns the Eloquent model class name
  *
- * @property array $data Paginated records data (from Pageable trait)
+ * @property array<mixed> $data Paginated records data (from Pageable trait)
  *
  * @example
  * ```php

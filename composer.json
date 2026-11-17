@@ -38,16 +38,16 @@
     },
     "require": {
         "php": "^8.2",
-        "dev-toolbelt/jsend-payload": "^1.0",
+        "dev-toolbelt/jsend-payload": "^1.0.2",
         "dev-toolbelt/enums": "^1.0",
-        "laravel/framework": "^11.0"
+        "laravel/framework": "^11.0|^12.0|^13.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
         "mockery/mockery": "^1.6",
-        "orchestra/testbench": "^9.16",
-        "phpstan/phpstan": "^1.0",
-        "phpunit/phpunit": "^10.0",
+        "orchestra/testbench": "^9.16|^10.0|^11.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^10.0|^11.0|^12.0",
         "squizlabs/php_codesniffer": "^3.5"
     },
     "autoload": {

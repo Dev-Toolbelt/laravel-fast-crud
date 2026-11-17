@@ -32,7 +32,7 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('name', 'ASC')
+            ->with('name', 'asc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, 'name');
@@ -43,7 +43,7 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('created_at', 'DESC')
+            ->with('created_at', 'desc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, '-created_at');
@@ -54,17 +54,17 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('category', 'ASC')
+            ->with('category', 'asc')
             ->andReturnSelf();
 
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('price', 'DESC')
+            ->with('price', 'desc')
             ->andReturnSelf();
 
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('name', 'ASC')
+            ->with('name', 'asc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, 'category,-price,name');
@@ -75,7 +75,7 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('created_at', 'ASC')
+            ->with('created_at', 'asc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, 'createdAt');
@@ -86,7 +86,7 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('updated_at', 'DESC')
+            ->with('updated_at', 'desc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, '-updatedAt');
@@ -97,12 +97,12 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('name', 'ASC')
+            ->with('name', 'asc')
             ->andReturnSelf();
 
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('price', 'ASC')
+            ->with('price', 'asc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, 'name,,price');
@@ -113,12 +113,12 @@ final class SortableTest extends TestCase
     {
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('name', 'ASC')
+            ->with('name', 'asc')
             ->andReturnSelf();
 
         $this->queryMock->shouldReceive('orderBy')
             ->once()
-            ->with('price', 'DESC')
+            ->with('price', 'desc')
             ->andReturnSelf();
 
         $this->processSort($this->queryMock, ' name , -price ');

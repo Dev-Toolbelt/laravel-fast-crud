@@ -25,7 +25,6 @@ final class RouterTest extends TestCase
     {
         $reflection = new \ReflectionClass(Router::class);
         $method = $reflection->getMethod('shouldRegisterAction');
-        $method->setAccessible(true);
 
         // When only is specified, should only include those actions
         $result = $method->invoke(null, 'search', ['search', 'read'], []);
@@ -39,7 +38,6 @@ final class RouterTest extends TestCase
     {
         $reflection = new \ReflectionClass(Router::class);
         $method = $reflection->getMethod('shouldRegisterAction');
-        $method->setAccessible(true);
 
         // When except is specified, should exclude those actions
         $result = $method->invoke(null, 'delete', [], ['delete']);
@@ -53,7 +51,6 @@ final class RouterTest extends TestCase
     {
         $reflection = new \ReflectionClass(Router::class);
         $method = $reflection->getMethod('shouldRegisterAction');
-        $method->setAccessible(true);
 
         // When no filters, should include all actions
         $result = $method->invoke(null, 'search', [], []);

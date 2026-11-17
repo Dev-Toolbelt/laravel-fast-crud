@@ -26,7 +26,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method string modelClassName() Returns the Eloquent model class name
  * @method JsonResponse|ResponseInterface answerRequired(string $field, HttpStatusCode $code) Required field error
  * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
- * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = [])
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array<mixed> $meta = [])
  *         Returns success response
  */
 trait Options
@@ -78,7 +78,7 @@ trait Options
         $query = DB::connection($connection)
             ->table($table)
             ->select([$value . ' as value', $label . ' as label'])
-            ->orderBy($label, 'ASC');
+            ->orderBy($label, 'asc');
 
         if ($this->hasModelAttribute($model, $deletedAtField)) {
             $query->whereNull($deletedAtField);

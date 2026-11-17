@@ -23,7 +23,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method JsonResponse|ResponseInterface answerRecordNotFound(HttpStatusCode $code = HttpStatusCode::NOT_FOUND)
  *         Returns not found error response
  * @method JsonResponse|ResponseInterface answerColumnNotFound(string $field, HttpStatusCode $code) Column not found
- * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array $meta = [])
+ * @method JsonResponse|ResponseInterface answerSuccess(mixed $data, HttpStatusCode $code, array<mixed> $meta = [])
  *         Returns success response
  */
 trait Restore

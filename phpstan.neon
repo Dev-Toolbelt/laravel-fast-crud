@@ -16,3 +16,7 @@ parameters:
     - '#Anonymous function should return Illuminate\\Database\\Eloquent\\Builder but returns Illuminate\\Database\\Query\\Builder#'
     # SoftDeletes trait methods - restore() is added by the trait
     - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::restore\(\)#'
+    # Traits are reusable outside CrudController, so the runtime property_exists() guards are intentional
+    -
+      identifier: function.alreadyNarrowedType
+      path: src/Traits/Searchable.php

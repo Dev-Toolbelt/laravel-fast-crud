@@ -332,7 +332,6 @@ final class DeleteActionTest extends TestCase
 
         $reflection = new \ReflectionClass($this->controller);
         $method = $reflection->getMethod('modelUsesSoftDeletes');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke($this->controller, $modelClass));
     }
@@ -344,7 +343,6 @@ final class DeleteActionTest extends TestCase
 
         $reflection = new \ReflectionClass($this->controller);
         $method = $reflection->getMethod('modelUsesSoftDeletes');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke($this->controller, $modelClass));
     }

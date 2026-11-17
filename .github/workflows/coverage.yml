@@ -39,7 +39,7 @@ jobs:
       - name: Setup PHP with PCOV
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           tools: composer:v2
           coverage: pcov
@@ -57,9 +57,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-8.3-composer-coverage-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-8.5-composer-coverage-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-php-8.3-composer-coverage-
+            ${{ runner.os }}-php-8.5-composer-coverage-
 
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist

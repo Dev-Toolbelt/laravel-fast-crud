@@ -8,7 +8,7 @@ Laravel package for rapid CRUD API scaffolding. Reduces boilerplate when buildin
 
 - **Package:** `dev-toolbelt/laravel-fast-crud`
 - **Namespace:** `DevToolbelt\LaravelFastCrud`
-- **PHP:** `^8.2` | **Laravel:** `^11.0`
+- **PHP:** `^8.2` | **Laravel:** `^11.0|^12.0|^13.0`
 
 ## Commands
 
